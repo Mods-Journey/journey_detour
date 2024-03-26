@@ -149,6 +149,7 @@
     <ClInclude Include="igig\console.h" />
     <ClInclude Include="igig\fontawesome.h" />
     <ClInclude Include="igig\igig.h" />
+    <ClInclude Include="silver-bun.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
