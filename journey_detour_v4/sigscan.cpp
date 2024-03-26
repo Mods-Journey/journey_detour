@@ -10,7 +10,7 @@ void __sigScanDispatchAll() {
   DetourUpdateThread(GetCurrentThread());
   for (const auto &entry : __sigScanEntries) {
     *entry.target = CModule("Journey.exe").FindPatternSIMD(entry.sig.c_str());
-    spdlog::info("{} -> 0x{:X}", entry.name, *entry.target);
+    spdlog::info("Resolved {} -> 0x{:X}", entry.name, *entry.target);
     if (entry.hook != nullptr && *entry.target != 0) {
       DetourAttach((PVOID *)entry.target, entry.hook);
     }

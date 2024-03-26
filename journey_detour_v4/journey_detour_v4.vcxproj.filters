@@ -53,5 +53,8 @@
     <ClInclude Include="sigscan.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="lua.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

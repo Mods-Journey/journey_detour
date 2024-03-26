@@ -6,6 +6,7 @@
 #include "igig/igig.h"
 #include "igig/console.h"
 #include "sigscan.h"
+#include "lua.h"
 
 #include <imgui.h>
 #include <spdlog/details/registry.h>
