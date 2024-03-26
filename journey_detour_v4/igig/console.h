@@ -12,6 +12,7 @@ public:
   bool show = true;
   bool autoScroll = true;
   bool scrollToBottomNextFrame = false;
+
   static IgIgConsole &instance();
 
   void draw();
@@ -24,8 +25,10 @@ public:
 private:
   std::vector<std::string> items;
   std::string inputBuf;
+  HANDLE conoutHandle = NULL;
 
   IgIgConsole();
+  ~IgIgConsole();
 };
 
 template <typename Mutex>

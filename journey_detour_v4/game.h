@@ -1,6 +1,18 @@
 #pragma once
 
+#include <mutex>
+#include <string>
+#include <vector>
+
 #include "sigscan.h"
+
+#define LUA_OK 0
+#define LUA_YIELD 1
+#define LUA_ERRRUN 2
+#define LUA_ERRSYNTAX 3
+#define LUA_ERRMEM 4
+#define LUA_ERRGCMM 5
+#define LUA_ERRERR 6
 
 typedef struct lua_State lua_State;
 typedef int (*lua_CFunction)(lua_State *L);
@@ -31,4 +43,10 @@ SIGSCAN_FUNC(lua_pcallk,
              __fastcall, int, lua_State *L, int nargs, int nresults,
              int errfunc, lua_KContext ctx, lua_KFunction k);
 
-SIGSCAN_FUNC(lua_gettop, "48 8B 41 ?? 48 8B 51 ?? 48 2B 10", __fastcall, int, lua_State *L);
+SIGSCAN_FUNC(lua_gettop, "48 8B 41 ?? 48 8B 51 ?? 48 2B 10", __fastcall, int,
+             lua_State *L);
+
+inline std::vector<std::function<void(lua_State *L)>> pendingOperations;
+inline std::mutex pendingOperationsMutex;
+
+std::function<void(lua_State *L)> luaJ_loadstring(const std::string &buf);

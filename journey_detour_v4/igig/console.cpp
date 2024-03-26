@@ -1,5 +1,6 @@
 #include "ansicolor.h"
 #include "console.h"
+#include "game.h"
 
 #include <imgui_stdlib.h>
 
@@ -11,7 +12,15 @@ IgIgConsole &IgIgConsole::instance() {
 void IgIgConsole::toggle() { show = !show; }
 
 void IgIgConsole::draw() {
+  char temp[1024]{};
+  DWORD tempLen = 0;
+  BOOL readResult = ReadFile(conoutHandle, temp, 1024, &tempLen, NULL);
+  if (tempLen > 0 && readResult == TRUE) {
+    addLog(std::string(temp, tempLen));
+  }
+
   ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
+
   if (!ImGui::Begin("Console")) {
     ImGui::End();
     return;
@@ -84,9 +93,24 @@ void IgIgConsole::execCmd(const std::string &cmd) {
   } else if (cmd.starts_with("quit")) {
     addLog("Goodbye!");
     exit(EXIT_SUCCESS);
+  } else if (cmd.starts_with("exec")) {
+    if (cmd.size() > 5) {
+      std::unique_lock lk(pendingOperationsMutex);
+      pendingOperations.push_back(luaJ_loadstring(cmd.substr(5)));
+    }
   } else {
     addLog("\033[31mCommand not found");
   }
 }
 
-IgIgConsole::IgIgConsole() {}
+IgIgConsole::IgIgConsole() {
+  conoutHandle = CreateFileA("CONOUT$", GENERIC_READ, FILE_SHARE_WRITE, NULL,
+                          OPEN_EXISTING,
+              FILE_ATTRIBUTE_NORMAL, NULL);
+}
+
+IgIgConsole::~IgIgConsole() {
+  if (conoutHandle != NULL) {
+    CloseHandle(conoutHandle);
+  }
+}

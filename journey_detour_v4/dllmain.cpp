@@ -6,7 +6,6 @@
 #include "igig/igig.h"
 #include "igig/console.h"
 #include "sigscan.h"
-#include "lua.h"
 
 #include <imgui.h>
 #include <spdlog/details/registry.h>
@@ -18,6 +17,7 @@ static void init() {
       [&sink](const std::shared_ptr<spdlog::logger> logger) {
         logger->sinks().push_back(sink);
       });
+  spdlog::set_pattern("[%H:%M:%S.%e %^%l%$] %v");
   auto &igig = IgIg::instance();
   igig.addDrawFunc([]() { IgIgConsole::instance().draw(); });
   igig.startHookThread();
