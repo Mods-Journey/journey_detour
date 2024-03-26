@@ -10,6 +10,8 @@
 class IgIgConsole {
 public:
   bool show = true;
+  bool autoScroll = true;
+  bool scrollToBottomNextFrame = false;
   static IgIgConsole &instance();
 
   void draw();
@@ -17,9 +19,11 @@ public:
   void addLog(const std::string &log);
   void addLog(std::string &&log);
   void clearLog();
+  void execCmd(const std::string& cmd);
 
 private:
   std::vector<std::string> items;
+  std::string inputBuf;
 
   IgIgConsole();
 };

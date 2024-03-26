@@ -55,13 +55,13 @@ bool ParseColor(const char *s, ImU32 *col, int *skipChars) {
   }
 
   if (s[2] == 'm') {
-    *col = 0xffcccccc;
+    *col = 0xffffffff;
     *skipChars = 3;
     return true;
   }
 
   if (s[2] == '0' && s[3] == 'm') {
-    *col = 0xffcccccc;
+    *col = 0xffffffff;
     *skipChars = 4;
     return true;
   }
@@ -83,28 +83,31 @@ bool ParseColor(const char *s, ImU32 *col, int *skipChars) {
   if (!colorStr.empty()) {
     switch (colorStr[1]) {
     case '0':
-      *col = 0xffcccccc;
+      *col = 0xffffffff;
       break;
     case '1':
-      *col = 0xff7a77f2;
+      *col = 0xff0000ff;
       break;
     case '2':
-      *col = 0xff99cc99;
+      *col = 0xff00ff00;
       break;
     case '3':
-      *col = 0xff66ccff;
+      *col = 0xff00ffff;
       break;
     case '4':
-      *col = 0xffcc9966;
+      *col = 0xffff0000;
       break;
     case '5':
-      *col = 0xffcc99cc;
+      *col = 0xffff00ff;
       break;
     case '6':
-      *col = 0xffcccc66;
+      *col = 0xffffff00;
       break;
     case '7':
       *col = 0xff2d2d2d;
+      break;
+    case '8':
+      *col = 0xff808080;
       break;
     default:
       return false;

@@ -11,7 +11,7 @@ public:
   HWND window = NULL;
   winrt::com_ptr<ID3D11Device> pDevice;
   winrt::com_ptr<ID3D11DeviceContext> pContext;
-  winrt::com_ptr<ID3D11RenderTargetView> mainRenderTargetView;
+  
   std::vector<std::function<void()>> drawFuncs;
   bool hooked = false;
   bool inited = false;

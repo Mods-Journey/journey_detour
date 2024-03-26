@@ -8,6 +8,7 @@
 
 #include <imgui.h>
 #include <spdlog/details/registry.h>
+#include <spdlog/spdlog.h>
 
 static void init() {
   auto sink = std::make_shared<igig_console_sink_mt>();
@@ -16,7 +17,6 @@ static void init() {
         logger->sinks().push_back(sink);
       });
   auto &igig = IgIg::instance();
-  igig.addDrawFunc([]() { ImGui::ShowDemoWindow(); });
   igig.addDrawFunc([]() { IgIgConsole::instance().draw(); });
   igig.startHookThread();
 }
