@@ -5,6 +5,7 @@
 
 #include "igig/console.h"
 #include "igig/igig.h"
+#include "lua.h"
 
 #include <imgui.h>
 #include <spdlog/details/registry.h>
@@ -19,6 +20,7 @@ static void init() {
   auto &igig = IgIg::instance();
   igig.addDrawFunc([]() { IgIgConsole::instance().draw(); });
   igig.startHookThread();
+  __sigScanDispatchAll();
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {

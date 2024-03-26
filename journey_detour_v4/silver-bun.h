@@ -774,7 +774,7 @@ public:
     ptrdiff_t dOccurrencesFound = 0;
 
     for (size_t i = 0ull; i < m_ExecutableCode->m_nSectionSize - 0x5; i++) {
-      byte byte = pTextStart[i];
+      uint8_t byte = pTextStart[i];
       if (byte == 0x8D) // 0x8D = LEA
       {
         const CMemory skipOpCode =

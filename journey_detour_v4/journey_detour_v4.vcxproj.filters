@@ -30,6 +30,9 @@
     <ClCompile Include="igig\console.cpp">
       <Filter>源文件\igig</Filter>
     </ClCompile>
+    <ClCompile Include="lua.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="igig\igig.h">
@@ -45,6 +48,9 @@
       <Filter>头文件\igig</Filter>
     </ClInclude>
     <ClInclude Include="silver-bun.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="lua.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
