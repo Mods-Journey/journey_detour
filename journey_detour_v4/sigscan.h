@@ -31,16 +31,16 @@ public:
   namespace __sigscan_func {                                                   \
   typedef ret(cc *##name##_t)(__VA_ARGS__);                                    \
   }                                                                            \
-  __sigscan_func::##name##_t name;                                             \
-  __SigScanSentinel CONCAT2(__sigScanSentinel, __LINE__)(#name, sig,           \
-                                                         (uintptr_t *)&name);
+  inline __sigscan_func::##name##_t name;                                      \
+  inline __SigScanSentinel CONCAT2(__sigScanSentinel,                          \
+                                   __LINE__)(#name, sig, (uintptr_t *)&name);
 
 #define SIGSCAN_HOOK(name, sig, cc, ret, ...)                                  \
   namespace __sigscan_func {                                                   \
   typedef ret(cc *##name##_t)(__VA_ARGS__);                                    \
   }                                                                            \
-  __sigscan_func::##name##_t name;                                             \
-  ret cc CONCAT2(__sigScanHooked, name)(__VA_ARGS__);                          \
-  __SigScanSentinel CONCAT2(__sigScanSentinel, name)(                          \
+  inline __sigscan_func::##name##_t name;                                      \
+  inline ret cc CONCAT2(__sigScanHooked, name)(__VA_ARGS__);                   \
+  inline __SigScanSentinel CONCAT2(__sigScanSentinel, name)(                   \
       #name, sig, (uintptr_t *)&name, CONCAT2(__sigScanHooked, name));         \
-  ret cc CONCAT2(__sigScanHooked, name)(__VA_ARGS__)
+  inline ret cc CONCAT2(__sigScanHooked, name)(__VA_ARGS__)

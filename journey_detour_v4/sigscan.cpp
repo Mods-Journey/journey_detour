@@ -1,4 +1,4 @@
-#include "lua.h"
+#include "sigscan.h"
 #include "silver-bun.h"
 
 #include <detours/detours.h>
@@ -26,9 +26,4 @@ __SigScanSentinel::__SigScanSentinel(std::string name, std::string sig,
 __SigScanSentinel::__SigScanSentinel(std::string name, std::string sig,
                                      uintptr_t *target, void *hook) {
   __sigScanEntries.emplace_back(name, sig, target, hook);
-}
-
-SIGSCAN_HOOK(GameUpdate, "40 55 53 56 57 41 55 41 56 48 8D AC 24", __fastcall,
-             __int64, __int64 a1, float a2) {
-  return GameUpdate(a1, a2);
 }

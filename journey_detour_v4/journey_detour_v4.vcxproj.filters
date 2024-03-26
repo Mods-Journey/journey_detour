@@ -30,7 +30,7 @@
     <ClCompile Include="igig\console.cpp">
       <Filter>源文件\igig</Filter>
     </ClCompile>
-    <ClCompile Include="lua.cpp">
+    <ClCompile Include="sigscan.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -50,7 +50,7 @@
     <ClInclude Include="silver-bun.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="lua.h">
+    <ClInclude Include="sigscan.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

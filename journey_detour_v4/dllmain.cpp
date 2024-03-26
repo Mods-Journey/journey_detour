@@ -3,9 +3,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-#include "igig/console.h"
 #include "igig/igig.h"
-#include "lua.h"
+#include "igig/console.h"
+#include "sigscan.h"
 
 #include <imgui.h>
 #include <spdlog/details/registry.h>

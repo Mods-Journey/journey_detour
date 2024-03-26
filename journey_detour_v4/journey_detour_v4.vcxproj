@@ -143,14 +143,14 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="igig\console.cpp" />
     <ClCompile Include="igig\igig.cpp" />
-    <ClCompile Include="lua.cpp" />
+    <ClCompile Include="sigscan.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="igig\ansicolor.h" />
     <ClInclude Include="igig\console.h" />
     <ClInclude Include="igig\fontawesome.h" />
     <ClInclude Include="igig\igig.h" />
-    <ClInclude Include="lua.h" />
+    <ClInclude Include="sigscan.h" />
     <ClInclude Include="silver-bun.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
