@@ -30,19 +30,20 @@ inline API_ProtectVirtualMemory pPVM = nullptr;
 inline API_QueryVirtualMemory pQVM = nullptr;
 inline API_WideCharToMultiByte pWCTMB = nullptr;
 
-template <class T> void SetPVM(T const pFunc) {
+template <class T> inline void SetPVM(T const pFunc) {
   pPVM = reinterpret_cast<API_ProtectVirtualMemory>(pFunc);
 }
 
-template <class T> void SetQVM(T const pFunc) {
+template <class T> inline void SetQVM(T const pFunc) {
   pQVM = reinterpret_cast<API_QueryVirtualMemory>(pFunc);
 }
 
-template <class T> void SetWCTMB(T const pFunc) {
+template <class T> inline void SetWCTMB(T const pFunc) {
   pWCTMB = reinterpret_cast<API_WideCharToMultiByte>(pFunc);
 }
 
-bool CallPVM(void *const pAddress, const size_t nSize, const uint32_t nProtect,
+inline bool CallPVM(void *const pAddress, const size_t nSize,
+                   const uint32_t nProtect,
              uint32_t *pOldProtect) {
   return pPVM != nullptr
              ? pPVM(pAddress, nSize, nProtect, pOldProtect)
@@ -50,13 +51,14 @@ bool CallPVM(void *const pAddress, const size_t nSize, const uint32_t nProtect,
                               reinterpret_cast<DWORD *>(pOldProtect));
 }
 
-bool CallQVM(const void *const pAddress, MEMORY_BASIC_INFORMATION *const pBuf,
+inline bool CallQVM(const void *const pAddress,
+                   MEMORY_BASIC_INFORMATION *const pBuf,
              const uint32_t nLen) {
   return pQVM != nullptr ? pQVM(pAddress, pBuf, nLen)
                          : VirtualQuery(pAddress, pBuf, nLen);
 }
 
-int CallWCTMB(const uint32_t nCodePage, const uint32_t nFlags,
+inline int CallWCTMB(const uint32_t nCodePage, const uint32_t nFlags,
               const wchar_t *const wszInWideString, const int nSizeOfInString,
               char *szOutString, const int nSizeOfOutString,
               const char *const szDefaultChar, bool *const usedDefaultChar) {

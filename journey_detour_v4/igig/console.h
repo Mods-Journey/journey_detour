@@ -7,25 +7,52 @@
 #include <imgui.h>
 #include <spdlog/sinks/base_sink.h>
 
+class IgIgConsolePage {
+public:
+  bool autoScroll = true;
+  bool scrollToBottomNextFrame = false;
+
+  inline IgIgConsolePage(std::string name) : name(name) {}
+
+  void draw();
+  void clear();
+
+  inline void log(std::string &&msg) {
+    std::unique_lock lk(itemsMutex);
+    items.push_back(msg);
+  }
+
+  template <typename... T>
+  inline void log(fmt::format_string<T...> fmt, T &&...args) {
+    std::unique_lock lk(itemsMutex);
+    items.push_back(fmt::vformat(fmt, fmt::make_format_args(args...)));
+  }
+
+private:
+  std::vector<std::string> items;
+  std::mutex itemsMutex;
+  std::string name;
+};
+
 class IgIgConsole {
 public:
   bool show = true;
   bool autoScroll = true;
   bool scrollToBottomNextFrame = false;
 
+  IgIgConsolePage pageDetour = IgIgConsolePage("Detour");
+  IgIgConsolePage pageStdout = IgIgConsolePage("Stdout");
+
   static IgIgConsole &instance();
 
   void draw();
   void toggle();
-  void addLog(const std::string &log);
-  void addLog(std::string &&log);
-  void clearLog();
   void execCmd(const std::string& cmd);
 
 private:
-  std::vector<std::string> items;
   std::string inputBuf;
-  HANDLE conoutHandle = NULL;
+  HANDLE stdoutPipeRead = NULL;
+  HANDLE stdoutPipeWrite = NULL;
 
   IgIgConsole();
   ~IgIgConsole();
@@ -74,9 +101,11 @@ protected:
                      formatted.begin() + msg.color_range_end);
       colored.append(reset.begin(), reset.end());
       colored.append(formatted.begin() + msg.color_range_end, formatted.end());
-      IgIgConsole::instance().addLog(spdlog::fmt_lib::to_string(colored));
+      IgIgConsole::instance().pageDetour.log(
+          spdlog::fmt_lib::to_string(colored));
     } else {
-      IgIgConsole::instance().addLog(spdlog::fmt_lib::to_string(formatted));
+      IgIgConsole::instance().pageDetour.log(
+          spdlog::fmt_lib::to_string(formatted));
     }
   }
 

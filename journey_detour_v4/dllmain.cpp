@@ -15,21 +15,26 @@ static void init() {
   auto sink = std::make_shared<igig_console_sink_mt>();
   spdlog::details::registry::instance().apply_all(
       [&sink](const std::shared_ptr<spdlog::logger> logger) {
+        logger->sinks().clear();
         logger->sinks().push_back(sink);
       });
   spdlog::set_pattern("[%H:%M:%S.%e %^%l%$] %v");
   auto &igig = IgIg::instance();
   igig.addDrawFunc([]() { IgIgConsole::instance().draw(); });
+  igig.addDrawFunc([]() { ImGui::ShowDemoWindow(); });
   igig.startHookThread();
   __sigScanDispatchAll();
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
   switch (fdwReason) {
-  case DLL_PROCESS_ATTACH:
+  case DLL_PROCESS_ATTACH: {
     DisableThreadLibraryCalls(hinstDLL);
-    std::jthread(init).detach();
+
+    std::jthread initThread(init);
+    initThread.detach();
     break;
+  }
   default:
     break;
   }
