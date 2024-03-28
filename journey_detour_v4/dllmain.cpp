@@ -21,7 +21,6 @@ static void init() {
   spdlog::set_pattern("[%H:%M:%S.%e %^%l%$] %v");
   auto &igig = IgIg::instance();
   igig.addDrawFunc([]() { IgIgConsole::instance().draw(); });
-  igig.addDrawFunc([]() { ImGui::ShowDemoWindow(); });
   igig.startHookThread();
   __sigScanDispatchAll();
 }

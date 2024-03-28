@@ -37,11 +37,8 @@ private:
 class IgIgConsole {
 public:
   bool show = true;
-  bool autoScroll = true;
-  bool scrollToBottomNextFrame = false;
 
-  IgIgConsolePage pageDetour = IgIgConsolePage("Detour");
-  IgIgConsolePage pageStdout = IgIgConsolePage("Stdout");
+  IgIgConsolePage pageLog = IgIgConsolePage("Log");
 
   static IgIgConsole &instance();
 
@@ -101,10 +98,10 @@ protected:
                      formatted.begin() + msg.color_range_end);
       colored.append(reset.begin(), reset.end());
       colored.append(formatted.begin() + msg.color_range_end, formatted.end());
-      IgIgConsole::instance().pageDetour.log(
+      IgIgConsole::instance().pageLog.log(
           spdlog::fmt_lib::to_string(colored));
     } else {
-      IgIgConsole::instance().pageDetour.log(
+      IgIgConsole::instance().pageLog.log(
           spdlog::fmt_lib::to_string(formatted));
     }
   }

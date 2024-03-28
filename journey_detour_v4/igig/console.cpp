@@ -68,8 +68,7 @@ void IgIgConsole::draw() {
 
   ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
   if (ImGui::BeginTabBar("Pages", tab_bar_flags)) {
-    pageDetour.draw();
-    pageStdout.draw();
+    pageLog.draw();
   }
 
   ImGui::Separator();
@@ -93,11 +92,11 @@ void IgIgConsole::draw() {
 }
 
 void IgIgConsole::execCmd(const std::string &cmd) {
-  pageDetour.log("\033[38m# {}", cmd);
+  pageLog.log("\033[38m# {}", cmd);
 
   if (cmd.starts_with("echo")) {
     if (cmd.size() > 5) {
-      pageDetour.log(cmd.substr(5));
+      pageLog.log(cmd.substr(5));
     }
   } else if (cmd.starts_with("quit")) {
     exit(EXIT_SUCCESS);
@@ -107,7 +106,7 @@ void IgIgConsole::execCmd(const std::string &cmd) {
       pendingOperations.push_back(luaJ_loadstring(cmd.substr(5)));
     }
   } else {
-    pageDetour.log("\033[31mCommand not found");
+    pageLog.log("\033[31mCommand not found");
   }
 }
 
@@ -122,7 +121,7 @@ IgIgConsole::IgIgConsole() {
     while (true) {
       bufSize = 0;
       if (ReadFile(stdoutPipeRead, buf, 1024, &bufSize, NULL)) {
-        pageStdout.log(std::string(buf, bufSize));
+        pageLog.log(std::string(buf, bufSize));
       } else {
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
       }
