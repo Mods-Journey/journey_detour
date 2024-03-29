@@ -334,8 +334,6 @@ function SpawnEvent( eventTable )
 				print( "SpawnEvent(): invalid param '"..key.."' for event '"..eventType.."'" )
 			else
 				eventImplPtr[ key ]( eventImplPtr, val )
-				
-			
 			end
 		end
 		
