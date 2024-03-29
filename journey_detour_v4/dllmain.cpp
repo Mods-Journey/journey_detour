@@ -6,7 +6,6 @@
 #include "igig/igig.h"
 #include "igig/console.h"
 #include "sigscan.h"
-#include "game.h"
 
 #include <imgui.h>
 #include <spdlog/details/registry.h>
@@ -24,12 +23,6 @@ static void init() {
   igig.addDrawFunc([]() { IgIgGui::instance().draw(); });
   igig.startHookThread();
   __sigScanDispatchAll();
-
-  {
-    std::unique_lock lk(pendingOperationsMutex);
-    pendingOperations.push_back(luaJ_loadlibs());
-  }
-  
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {

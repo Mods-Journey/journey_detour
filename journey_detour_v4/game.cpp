@@ -6,6 +6,8 @@
 
 #include <winrt/base.h>
 
+#include <mimalloc.h>
+
 namespace fs = std::filesystem;
 
 SIGSCAN_HOOK(
@@ -14,7 +16,7 @@ SIGSCAN_HOOK(
     __fastcall, int, lua_State *a1, const char *a2) {
   fs::path filePath = strstr(a2, "Data/");
   if (std::ifstream fileStream{filePath, std::ios::binary | std::ios::ate}) {
-    spdlog::info("[ExternalLua] Loading {}",
+    spdlog::info("[\033[32mExternalLua\033[m] Loading {}",
                  winrt::to_string(filePath.wstring()));
     size_t fileSize = fileStream.tellg();
     std::vector<char> buf(fileSize, '\0');
@@ -23,7 +25,7 @@ SIGSCAN_HOOK(
     return luaL_loadbufferx(a1, buf.data(), buf.size(),
                             filePath.string().c_str(), "bt");
   } else {
-    spdlog::warn("[ExternalLua] Missing {}",
+    spdlog::warn("[\033[32mExternalLua\033[m] Missing {}",
                  winrt::to_string(filePath.wstring()));
     return LoadEmbeddedLuaFile(a1, a2);
   }
@@ -32,39 +34,59 @@ SIGSCAN_HOOK(
 SIGSCAN_HOOK(GameUpdate, "40 55 53 56 57 41 55 41 56 48 8D AC 24", __fastcall,
              __int64, __int64 a1, float a2) {
   lua_State *L = *(lua_State **)(a1 + 32);
-
-  {
-    std::unique_lock lk(pendingOperationsMutex);
-    for (auto &func : pendingOperations) {
-      func(L);
-    }
-    pendingOperations.clear();
-  }
-
+  LuaManager::instance().update(L);
   return GameUpdate(a1, a2);
 }
 
-std::function<void(lua_State *L)> luaJ_loadstring(const std::string &buf) {
-  return [buf](lua_State *L) {
-    int loadResult = luaL_loadbufferx(L, buf.c_str(), buf.size(), "Cmd", 0);
-    if (loadResult != LUA_OK) {
-      spdlog::error("lua_loadbufferx failed: {}", lua_tostring(L, -1));
-      lua_pop(L, 1);
-      return;
-    }
-    int callResult = lua_pcallk(L, 0, 0, 0, 0, nullptr);
-    if (callResult != LUA_OK) {
-      spdlog::error("lua_pcallk failed: {}", lua_tostring(L, -1));
-      lua_pop(L, 1);
-      return;
-    }
-  };
+LuaManager &LuaManager::instance() {
+  static LuaManager LUA_MANAGER;
+  return LUA_MANAGER;
 }
 
-std::function<void(lua_State *L)> luaJ_loadlibs() {
-  return [](lua_State *L) {
-    spdlog::info("Loading additional Lua libraries...");
-    luaJ_loadstring(lib_inspect)(L);
-    luaJ_loadstring(lib_journeydetour)(L);
-  };
+void LuaManager::doNextFrame(std::function<void(lua_State *L)> &&operation) {
+  std::unique_lock lk(pendingOperationsMutex);
+  pendingOperations.push_back(std::move(operation));
+}
+
+void LuaManager::doNextFrame(const std::string &str) {
+  doNextFrame([str](lua_State *L) {
+    if (luaL_loadbufferx(L, str.c_str(), str.size(), "cmd", 0) != LUA_OK) {
+      spdlog::error("load failed: {}", lua_tostring(L, -1));
+      lua_pop(L, 1);
+      return;
+    }
+    if (lua_pcallk(L, 0, 0, 0, 0, nullptr) != LUA_OK) {
+      spdlog::error("call failed: {}", lua_tostring(L, -1));
+      lua_pop(L, 1);
+      return;
+    }
+  });
+}
+
+void LuaManager::update(lua_State *L) {
+  std::unique_lock lk(pendingOperationsMutex);
+  for (auto &operation : pendingOperations) {
+    operation(L);
+  }
+  pendingOperations.clear();
+}
+
+LuaManager::LuaManager() {
+  spdlog::info("Loading additional Lua libraries...");
+  doNextFrame(lib_inspect);
+  doNextFrame(lib_journeydetour);
+}
+
+static void* lua_mimalloc(void* ud, void* ptr, size_t osize, size_t nsize) {
+  if (nsize == 0) {
+    mi_free(ptr);
+    return nullptr;
+  } else {
+    return mi_realloc(ptr, nsize);
+  }
+}
+
+SIGSCAN_HOOK(lua_newstate, "40 55 56 41 56 48 83 EC ?? 48 8B EA", __fastcall,
+             lua_State *, lua_Alloc f, void *ud) {
+  return lua_newstate(lua_mimalloc, nullptr);
 }

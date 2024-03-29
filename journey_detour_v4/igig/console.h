@@ -33,7 +33,7 @@ public:
 
 private:
   std::vector<std::string> history;
-  int64_t historyPos;
+  int64_t historyPos = -1;
   std::vector<std::string> items;
   std::mutex itemsMutex;
   std::string name;
@@ -46,17 +46,13 @@ class IgIgGui {
 public:
   bool show = true;
 
-  IgIgConsolePage pageLog = IgIgConsolePage("Log");
+  IgIgConsolePage pageConsole = IgIgConsolePage("Console");
 
   static IgIgGui &instance();
 
   void draw();
   void toggle();
-  
-
 private:
- 
-
   IgIgGui();
   ~IgIgGui();
 };
@@ -104,10 +100,10 @@ protected:
                      formatted.begin() + msg.color_range_end);
       colored.append(reset.begin(), reset.end());
       colored.append(formatted.begin() + msg.color_range_end, formatted.end());
-      IgIgGui::instance().pageLog.log(
+      IgIgGui::instance().pageConsole.log(
           spdlog::fmt_lib::to_string(colored));
     } else {
-      IgIgGui::instance().pageLog.log(
+      IgIgGui::instance().pageConsole.log(
           spdlog::fmt_lib::to_string(formatted));
     }
   }

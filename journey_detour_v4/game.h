@@ -19,6 +19,7 @@ typedef int (*lua_CFunction)(lua_State *L);
 #define LUA_KCONTEXT ptrdiff_t
 typedef LUA_KCONTEXT lua_KContext;
 typedef int (*lua_KFunction)(lua_State *L, int status, lua_KContext ctx);
+typedef void *(*lua_Alloc)(void *ud, void *ptr, size_t osize, size_t nsize);
 
 SIGSCAN_FUNC(lua_settop, "85 D2 78 34 48", __fastcall, void, lua_State *L,
              int idx);
@@ -54,9 +55,22 @@ SIGSCAN_FUNC(lua_pcallk,
 SIGSCAN_FUNC(lua_gettop, "48 8B 41 ?? 48 8B 51 ?? 48 2B 10", __fastcall, int,
              lua_State *L);
 
-inline std::vector<std::function<void(lua_State *L)>> pendingOperations;
-inline std::mutex pendingOperationsMutex;
+class LuaManager {
+public:
+  static LuaManager &instance();
 
-std::function<void(lua_State *L)> luaJ_loadstring(const std::string &buf);
+  void doNextFrame(std::function<void(lua_State *L)> &&operation);
+  void doNextFrame(const std::string &str);
+  template <typename... T>
+  inline void doNextFrame(fmt::format_string<T...> fmt, T &&...args) {
+    return doNextFrame(fmt::vformat(fmt, fmt::make_format_args(args...)));
+  }
 
-std::function<void(lua_State *L)> luaJ_loadlibs();
+  void update(lua_State* L);
+
+private:
+  std::mutex pendingOperationsMutex;
+  std::vector<std::function<void(lua_State *L)>> pendingOperations;
+
+  LuaManager();
+};
