@@ -14,9 +14,11 @@
 #define LUA_ERRGCMM 5
 #define LUA_ERRERR 6
 
+#define LUA_KCONTEXT ptrdiff_t
+#define lua_pushcfunction(L, f) lua_pushcclosure(L, (f), 0)
+
 typedef struct lua_State lua_State;
 typedef int (*lua_CFunction)(lua_State *L);
-#define LUA_KCONTEXT ptrdiff_t
 typedef LUA_KCONTEXT lua_KContext;
 typedef int (*lua_KFunction)(lua_State *L, int status, lua_KContext ctx);
 typedef void *(*lua_Alloc)(void *ud, void *ptr, size_t osize, size_t nsize);
@@ -55,9 +57,18 @@ SIGSCAN_FUNC(lua_pcallk,
 SIGSCAN_FUNC(lua_gettop, "48 8B 41 ?? 48 8B 51 ?? 48 2B 10", __fastcall, int,
              lua_State *L);
 
+SIGSCAN_FUNC(lua_setglobal,
+             "48 89 5C 24 ?? 57 48 83 EC ?? 48 8B 41 ?? 48 8B DA 48 8B F9 BA "
+             "?? ?? ?? ?? 48 8B 48 ?? E8 ?? ?? ?? ?? 48 8B D0 4C 8B C3 48 8B "
+             "CF 48 8B 5C 24 ?? 48 83 C4 ?? 5F E9 ?? ?? ?? ?? CC CC CC CC CC "
+             "CC 48 89 5C 24 ?? 48 89 74 24",
+             __fastcall, void, lua_State *L, const char *name);
+
 class LuaManager {
 public:
   static LuaManager &instance();
+
+  std::function<void(lua_State *L)> registerCFunctions();
 
   void doNextFrame(std::function<void(lua_State *L)> &&operation);
   void doNextFrame(const std::string &str);
@@ -66,7 +77,7 @@ public:
     return doNextFrame(fmt::vformat(fmt, fmt::make_format_args(args...)));
   }
 
-  void update(lua_State* L);
+  void update(lua_State *L);
 
 private:
   std::mutex pendingOperationsMutex;
