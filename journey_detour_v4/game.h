@@ -15,7 +15,6 @@
 #define LUA_ERRERR 6
 
 #define LUA_KCONTEXT ptrdiff_t
-#define lua_pushcfunction(L, f) lua_pushcclosure(L, (f), 0)
 
 typedef struct lua_State lua_State;
 typedef int (*lua_CFunction)(lua_State *L);
@@ -38,6 +37,8 @@ SIGSCAN_FUNC(luaL_loadbufferx, "48 83 EC ?? 48 8B 44 24 ?? 48 89 54 24",
 SIGSCAN_FUNC(lua_pushcclosure,
              "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 63 F8",
              __fastcall, void, lua_State *L, lua_CFunction fn, int n);
+
+#define lua_pushcfunction(L, f) lua_pushcclosure(L, (f), 0)
 
 SIGSCAN_FUNC(lua_tolstring,
              "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 8B D8 8B F2",
@@ -68,14 +69,15 @@ class LuaManager {
 public:
   static LuaManager &instance();
 
-  std::function<void(lua_State *L)> registerCFunctions();
-
   void doNextFrame(std::function<void(lua_State *L)> &&operation);
   void doNextFrame(const std::string &str);
   template <typename... T>
   inline void doNextFrame(fmt::format_string<T...> fmt, T &&...args) {
     return doNextFrame(fmt::vformat(fmt, fmt::make_format_args(args...)));
   }
+
+  void registerGlobal(const std::string &name, const std::string &code);
+  void registerGlobal(const std::string &name, lua_CFunction func);
 
   void update(lua_State *L);
 

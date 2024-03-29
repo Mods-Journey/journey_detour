@@ -149,6 +149,7 @@
     <ClCompile Include="igig\console.cpp" />
     <ClCompile Include="igig\igig.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="igig\mistats.cpp" />
     <ClCompile Include="sigscan.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -157,6 +158,7 @@
     <ClInclude Include="igig\fontawesome.h" />
     <ClInclude Include="igig\igig.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="igig\mistats.h" />
     <ClInclude Include="lualibs.h" />
     <ClInclude Include="sigscan.h" />
     <ClInclude Include="silver-bun.h" />

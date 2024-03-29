@@ -3,6 +3,8 @@
 
 #include <thread>
 
+#include "mistats.h"
+
 #include <detours/detours.h>
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
@@ -320,6 +322,7 @@ void IgIgGui::draw() {
   ImGuiTabBarFlags tabBarFlags = ImGuiTabBarFlags_None;
   if (ImGui::BeginTabBar("Pages", tabBarFlags)) {
     IgIgPageConsole::instance().draw();
+    IgIgPageMistats::instance().draw();
   }
 
   ImGui::End();

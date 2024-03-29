@@ -37,6 +37,30 @@ void LuaManager::doNextFrame(const std::string &str) {
   });
 }
 
+void LuaManager::registerGlobal(const std::string &name,
+                                const std::string &code) {
+  doNextFrame([name, code](lua_State *L) {
+    if (luaL_loadbufferx(L, code.c_str(), code.size(), "code", 0) != LUA_OK) {
+      spdlog::error("load failed: {}", lua_tostring(L, -1));
+      lua_pop(L, 1);
+      return;
+    }
+    if (lua_pcallk(L, 0, 1, 0, 0, nullptr) != LUA_OK) {
+      spdlog::error("call failed: {}", lua_tostring(L, -1));
+      lua_pop(L, 1);
+      return;
+    }
+    lua_setglobal(L, name.c_str());
+  });
+}
+
+void LuaManager::registerGlobal(const std::string &name, lua_CFunction func) {
+  doNextFrame([name, func](lua_State *L) {
+    lua_pushcfunction(L, func);
+    lua_setglobal(L, name.c_str());
+  });
+}
+
 void LuaManager::update(lua_State *L) {
   std::unique_lock lk(pendingOperationsMutex);
   for (auto &operation : pendingOperations) {
@@ -62,13 +86,9 @@ static int luaC_test(lua_State *L) {
 
 LuaManager::LuaManager() {
   spdlog::info("Loading additional Lua libraries...");
-  doNextFrame(lib_inspect);
+  registerGlobal("inspect", lib_inspect);
   doNextFrame(lib_journeydetour);
-
-  doNextFrame([](lua_State *L) {
-    lua_pushcfunction(L, luaC_test);
-    lua_setglobal(L, "LuaTest");
-  });
+  registerGlobal("LuaTest", luaC_test);
 }
 SIGSCAN_HOOK(
     LoadEmbeddedLuaFile,

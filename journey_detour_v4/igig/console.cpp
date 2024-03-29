@@ -9,8 +9,8 @@
 #include <winrt/base.h>
 
 IgIgPageConsole &IgIgPageConsole::instance() {
-  static IgIgPageConsole IGIG_CONSOLE_PAGE;
-  return IGIG_CONSOLE_PAGE;
+  static IgIgPageConsole IGIG_PAGE_CONSOLE;
+  return IGIG_PAGE_CONSOLE;
 }
 
 IgIgPageConsole::IgIgPageConsole() {

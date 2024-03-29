@@ -36,6 +36,9 @@
     <ClCompile Include="game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="igig\mistats.cpp">
+      <Filter>Source Files\igig</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="igig\igig.h">
@@ -61,6 +64,9 @@
     </ClInclude>
     <ClInclude Include="lualibs.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="igig\mistats.h">
+      <Filter>Header Files\igig</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,7 +1,7 @@
 #pragma once
 
 const char *lib_inspect = R"(
-inspect = {Options = {}, }
+local inspect = {Options = {}, }
 inspect.KEY = setmetatable({}, { __tostring = function() return 'inspect.KEY' end })
 inspect.METATABLE = setmetatable({}, { __tostring = function() return 'inspect.METATABLE' end })
 local tostring = tostring
@@ -307,6 +307,8 @@ setmetatable(inspect, {
       return inspect.inspect(root, options)
    end,
 })
+
+return inspect
 )";
 
 
