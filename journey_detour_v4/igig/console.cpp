@@ -10,6 +10,41 @@
 #include <imgui_stdlib.h>
 #include <winrt/base.h>
 
+IgIgConsolePage::IgIgConsolePage(std::string name) : name(name) {
+  AllocConsole();
+  freopen("CONOUT$", "w", stdout);
+  CreatePipe(&stdoutPipeRead, &stdoutPipeWrite, NULL, 10240);
+
+  std::jthread readThread([this]() {
+    char buf[1024]{};
+    DWORD bufSize = 0;
+    while (true) {
+      bufSize = 0;
+      if (ReadFile(stdoutPipeRead, buf, 1024, &bufSize, NULL)) {
+        log(std::string(buf, bufSize));
+      } else {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      }
+    }
+  });
+  readThread.detach();
+
+  int redirectFd = _open_osfhandle((intptr_t)stdoutPipeWrite, _O_TEXT);
+  _dup2(redirectFd, _fileno(stdout));
+
+  FreeConsole();
+}
+
+IgIgConsolePage::~IgIgConsolePage() {
+  if (stdoutPipeRead != NULL) {
+    CloseHandle(stdoutPipeRead);
+  }
+
+  if (stdoutPipeWrite != NULL) {
+    CloseHandle(stdoutPipeWrite);
+  }
+}
+
 void IgIgConsolePage::draw() {
   if (ImGui::BeginTabItem(name.c_str())) {
     const float heightReserved =
@@ -40,8 +75,34 @@ void IgIgConsolePage::draw() {
       scrollToBottomNextFrame = false;
 
       ImGui::PopStyleVar();
+      ImGui::EndChild();
+      ImGui::Separator();
+
+      ImGuiInputTextFlags inputTextFlags =
+          ImGuiInputTextFlags_CallbackHistory |
+          ImGuiInputTextFlags_EnterReturnsTrue |
+          ImGuiInputTextFlags_EscapeClearsAll;
+      bool reclaimFocusNextFrame = false;
+      if (ImGui::InputText(
+              "Input", &inputBuf, inputTextFlags,
+              [](ImGuiInputTextCallbackData *data) {
+                IgIgConsolePage *console = (IgIgConsolePage *)data->UserData;
+                return console->TextEditCallBack(data);
+              },
+              (void *)this)) {
+        if (!inputBuf.empty()) {
+          execCmd(inputBuf);
+          inputBuf.clear();
+        }
+        reclaimFocusNextFrame = true;
+      }
+
+      ImGui::SetItemDefaultFocus();
+      if (reclaimFocusNextFrame) {
+        ImGui::SetKeyboardFocusHere(-1);
+      }
     }
-    ImGui::EndChild();
+
     ImGui::EndTabItem();
   }
 }
@@ -51,17 +112,17 @@ void IgIgConsolePage::clear() {
   items.clear();
 }
 
-IgIgConsole &IgIgConsole::instance() {
-  static IgIgConsole IGIG_CONSOLE;
+IgIgGui &IgIgGui::instance() {
+  static IgIgGui IGIG_CONSOLE;
   return IGIG_CONSOLE;
 }
 
-void IgIgConsole::toggle() { show = !show; }
+void IgIgGui::toggle() { show = !show; }
 
-void IgIgConsole::draw() {
+void IgIgGui::draw() {
   ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
 
-  if (!ImGui::Begin("Console")) {
+  if (!ImGui::Begin("Journey Detour v4")) {
     ImGui::End();
     return;
   }
@@ -71,32 +132,26 @@ void IgIgConsole::draw() {
     pageLog.draw();
   }
 
-  ImGui::Separator();
-
-  ImGuiInputTextFlags inputTextFlags = ImGuiInputTextFlags_EnterReturnsTrue |
-                                       ImGuiInputTextFlags_EscapeClearsAll;
-  bool reclaimFocusNextFrame = false;
-  if (ImGui::InputText("Input", &inputBuf, inputTextFlags)) {
-    if (!inputBuf.empty()) {
-      execCmd(inputBuf);
-      inputBuf.clear();
-    }
-    reclaimFocusNextFrame = true;
-  }
-
-  ImGui::SetItemDefaultFocus();
-  if (reclaimFocusNextFrame) {
-    ImGui::SetKeyboardFocusHere(-1);
-  }
   ImGui::End();
 }
 
-void IgIgConsole::execCmd(const std::string &cmd) {
-  pageLog.log("\033[38m# {}", cmd);
+void IgIgConsolePage::execCmd(const std::string &cmd) {
+  log("\033[38m# {}", cmd);
+
+  historyPos = -1;
+
+  for (int64_t i = (int64_t)history.size() - 1; i >= 0; i--) {
+    if (cmd == history[i]) {
+      history.erase(history.begin() + i);
+      break;
+    }
+  }
+
+  history.push_back(cmd);
 
   if (cmd.starts_with("echo")) {
     if (cmd.size() > 5) {
-      pageLog.log(cmd.substr(5));
+      log(cmd.substr(5));
     }
   } else if (cmd.starts_with("quit")) {
     exit(EXIT_SUCCESS);
@@ -106,41 +161,39 @@ void IgIgConsole::execCmd(const std::string &cmd) {
       pendingOperations.push_back(luaJ_loadstring(cmd.substr(5)));
     }
   } else {
-    pageLog.log("\033[31mCommand not found");
+    log("\033[31mCommand not found");
   }
 }
 
-IgIgConsole::IgIgConsole() {
-  AllocConsole();
-  freopen("CONOUT$", "w", stdout);
-  CreatePipe(&stdoutPipeRead, &stdoutPipeWrite, NULL, 10240);
-
-  std::jthread readThread([this]() {
-    char buf[1024]{};
-    DWORD bufSize = 0;
-    while (true) {
-      bufSize = 0;
-      if (ReadFile(stdoutPipeRead, buf, 1024, &bufSize, NULL)) {
-        pageLog.log(std::string(buf, bufSize));
-      } else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+int IgIgConsolePage::TextEditCallBack(ImGuiInputTextCallbackData *data) {
+  switch (data->EventFlag) {
+  case ImGuiInputTextFlags_CallbackHistory: {
+    int64_t prevHistoryPos = historyPos;
+    if (data->EventKey == ImGuiKey_UpArrow) {
+      if (historyPos == -1) {
+        historyPos = history.size() - 1;
+      } else if (historyPos > 0) {
+        historyPos--;
+      }
+    } else if (data->EventKey == ImGuiKey_DownArrow) {
+      if (historyPos != -1) {
+        if (++historyPos >= (int64_t)history.size()) {
+          historyPos = -1;
+        }
       }
     }
-  });
-  readThread.detach();
-
-  int redirectFd = _open_osfhandle((intptr_t)stdoutPipeWrite, _O_TEXT);
-  _dup2(redirectFd, _fileno(stdout));
-
-  FreeConsole();
+    
+    if (prevHistoryPos != historyPos) {
+      std::string historyStr = (historyPos >= 0) ? history[historyPos] : "";
+      data->DeleteChars(0, data->BufTextLen);
+      data->InsertChars(0, historyStr.c_str());
+    }
+    break;
+  }
+  }
+  return 0;
 }
 
-IgIgConsole::~IgIgConsole() {
-  if (stdoutPipeRead != NULL) {
-    CloseHandle(stdoutPipeRead);
-  }
+IgIgGui::IgIgGui() {}
 
-  if (stdoutPipeWrite != NULL) {
-    CloseHandle(stdoutPipeWrite);
-  }
-}
+IgIgGui::~IgIgGui() {}

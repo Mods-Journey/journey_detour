@@ -1,4 +1,5 @@
 #include "game.h"
+#include "lualibs.h"
 
 #include <filesystem>
 #include <fstream>
@@ -10,7 +11,7 @@ namespace fs = std::filesystem;
 SIGSCAN_HOOK(
     LoadEmbeddedLuaFile,
     "40 55 41 56 41 57 48 83 EC ?? 48 8D 6C 24 ?? 48 89 5D ?? 48 8B DA",
-    __fastcall, int, lua_State* a1, const char *a2) {
+    __fastcall, int, lua_State *a1, const char *a2) {
   fs::path filePath = strstr(a2, "Data/");
   if (std::ifstream fileStream{filePath, std::ios::binary | std::ios::ate}) {
     spdlog::info("[ExternalLua] Loading {}",
@@ -45,20 +46,25 @@ SIGSCAN_HOOK(GameUpdate, "40 55 53 56 57 41 55 41 56 48 8D AC 24", __fastcall,
 
 std::function<void(lua_State *L)> luaJ_loadstring(const std::string &buf) {
   return [buf](lua_State *L) {
-    int loadResult =
-        luaL_loadbufferx(L, buf.c_str(), buf.size(), "JourneyDetourPayload", 0);
+    int loadResult = luaL_loadbufferx(L, buf.c_str(), buf.size(), "Cmd", 0);
     if (loadResult != LUA_OK) {
-      spdlog::error("luaL_loadbufferx failed: {}", loadResult);
+      spdlog::error("lua_loadbufferx failed: {}", lua_tostring(L, -1));
+      lua_pop(L, 1);
       return;
     }
     int callResult = lua_pcallk(L, 0, 0, 0, 0, nullptr);
-    if (callResult == LUA_OK) {
-      spdlog::info("{}", lua_tostring(L, -1));
-
-    } else {
-      spdlog::error("lua_pcallk failed: [{}] {}", callResult,
-                    lua_tostring(L, -1));
+    if (callResult != LUA_OK) {
+      spdlog::error("lua_pcallk failed: {}", lua_tostring(L, -1));
+      lua_pop(L, 1);
       return;
     }
+  };
+}
+
+std::function<void(lua_State *L)> luaJ_loadlibs() {
+  return [](lua_State *L) {
+    spdlog::info("Loading additional Lua libraries...");
+    luaJ_loadstring(lib_inspect)(L);
+    luaJ_loadstring(lib_journeydetour)(L);
   };
 }

@@ -12,15 +12,18 @@ public:
   bool autoScroll = true;
   bool scrollToBottomNextFrame = false;
 
-  inline IgIgConsolePage(std::string name) : name(name) {}
-
+  IgIgConsolePage(std::string name);
+  ~IgIgConsolePage();
   void draw();
   void clear();
-
+  void execCmd(const std::string &cmd);
   inline void log(std::string &&msg) {
     std::unique_lock lk(itemsMutex);
     items.push_back(msg);
   }
+
+  int TextEditCallBack(ImGuiInputTextCallbackData *data);
+  
 
   template <typename... T>
   inline void log(fmt::format_string<T...> fmt, T &&...args) {
@@ -29,30 +32,33 @@ public:
   }
 
 private:
+  std::vector<std::string> history;
+  int64_t historyPos;
   std::vector<std::string> items;
   std::mutex itemsMutex;
   std::string name;
+  std::string inputBuf;
+  HANDLE stdoutPipeRead = NULL;
+  HANDLE stdoutPipeWrite = NULL;
 };
 
-class IgIgConsole {
+class IgIgGui {
 public:
   bool show = true;
 
   IgIgConsolePage pageLog = IgIgConsolePage("Log");
 
-  static IgIgConsole &instance();
+  static IgIgGui &instance();
 
   void draw();
   void toggle();
-  void execCmd(const std::string& cmd);
+  
 
 private:
-  std::string inputBuf;
-  HANDLE stdoutPipeRead = NULL;
-  HANDLE stdoutPipeWrite = NULL;
+ 
 
-  IgIgConsole();
-  ~IgIgConsole();
+  IgIgGui();
+  ~IgIgGui();
 };
 
 template <typename Mutex>
@@ -98,10 +104,10 @@ protected:
                      formatted.begin() + msg.color_range_end);
       colored.append(reset.begin(), reset.end());
       colored.append(formatted.begin() + msg.color_range_end, formatted.end());
-      IgIgConsole::instance().pageLog.log(
+      IgIgGui::instance().pageLog.log(
           spdlog::fmt_lib::to_string(colored));
     } else {
-      IgIgConsole::instance().pageLog.log(
+      IgIgGui::instance().pageLog.log(
           spdlog::fmt_lib::to_string(formatted));
     }
   }

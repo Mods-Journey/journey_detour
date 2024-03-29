@@ -157,6 +157,7 @@
     <ClInclude Include="igig\fontawesome.h" />
     <ClInclude Include="igig\igig.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="lualibs.h" />
     <ClInclude Include="sigscan.h" />
     <ClInclude Include="silver-bun.h" />
   </ItemGroup>

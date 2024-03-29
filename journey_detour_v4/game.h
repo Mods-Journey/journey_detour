@@ -20,6 +20,14 @@ typedef int (*lua_CFunction)(lua_State *L);
 typedef LUA_KCONTEXT lua_KContext;
 typedef int (*lua_KFunction)(lua_State *L, int status, lua_KContext ctx);
 
+SIGSCAN_FUNC(lua_settop, "85 D2 78 34 48", __fastcall, void, lua_State *L,
+             int idx);
+
+#define lua_pop(L, n) lua_settop(L, -(n)-1)
+
+SIGSCAN_FUNC(luaL_loadstring, "48 83 EC 48 48 89 54 24 30 48", __fastcall, int,
+             lua_State *L, const char *s);
+
 SIGSCAN_FUNC(luaL_loadbufferx, "48 83 EC ?? 48 8B 44 24 ?? 48 89 54 24",
              __fastcall, int, lua_State *L, const char *buff, size_t size,
              const char *name, const char *mode);
@@ -50,3 +58,5 @@ inline std::vector<std::function<void(lua_State *L)>> pendingOperations;
 inline std::mutex pendingOperationsMutex;
 
 std::function<void(lua_State *L)> luaJ_loadstring(const std::string &buf);
+
+std::function<void(lua_State *L)> luaJ_loadlibs();
