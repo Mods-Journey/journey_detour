@@ -294,3 +294,37 @@ IgIg &IgIg::instance() {
   static IgIg IGIG;
   return IGIG;
 }
+
+IgIgGui &IgIgGui::instance() {
+  static IgIgGui IGIG_CONSOLE;
+  return IGIG_CONSOLE;
+}
+
+void IgIgGui::toggle() { show = !show; }
+
+void IgIgGui::draw() {
+  if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent, false)) {
+    toggle();
+  }
+
+  if (!show) {
+    return;
+  }
+
+  ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
+  if (!ImGui::Begin("Journey Detour v4", &show)) {
+    ImGui::End();
+    return;
+  }
+
+  ImGuiTabBarFlags tabBarFlags = ImGuiTabBarFlags_None;
+  if (ImGui::BeginTabBar("Pages", tabBarFlags)) {
+    IgIgPageConsole::instance().draw();
+  }
+
+  ImGui::End();
+}
+
+IgIgGui::IgIgGui() {}
+
+IgIgGui::~IgIgGui() {}

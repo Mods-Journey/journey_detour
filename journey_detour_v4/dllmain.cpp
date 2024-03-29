@@ -3,8 +3,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-#include "igig/igig.h"
 #include "igig/console.h"
+#include "igig/igig.h"
 #include "sigscan.h"
 
 #include <imgui.h>
@@ -18,7 +18,7 @@ static void init() {
         logger->sinks().clear();
         logger->sinks().push_back(sink);
       });
-  spdlog::set_pattern("[%H:%M:%S.%e %^%l%$] %v");
+  spdlog::set_pattern("[%H:%M:%S.%e %^%=7l%$] %v");
   auto &igig = IgIg::instance();
   igig.addDrawFunc([]() { IgIgGui::instance().draw(); });
   igig.startHookThread();

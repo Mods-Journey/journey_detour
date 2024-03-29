@@ -7,13 +7,15 @@
 #include <imgui.h>
 #include <spdlog/sinks/base_sink.h>
 
-class IgIgConsolePage {
+class IgIgPageConsole {
 public:
   bool autoScroll = true;
   bool scrollToBottomNextFrame = false;
 
-  IgIgConsolePage(std::string name);
-  ~IgIgConsolePage();
+  static IgIgPageConsole &instance();
+
+  ~IgIgPageConsole();
+
   void draw();
   void clear();
   void execCmd(const std::string &cmd);
@@ -24,7 +26,6 @@ public:
 
   int TextEditCallBack(ImGuiInputTextCallbackData *data);
   
-
   template <typename... T>
   inline void log(fmt::format_string<T...> fmt, T &&...args) {
     std::unique_lock lk(itemsMutex);
@@ -34,27 +35,17 @@ public:
 private:
   std::vector<std::string> history;
   int64_t historyPos = -1;
+
   std::vector<std::string> items;
   std::mutex itemsMutex;
-  std::string name;
+
   std::string inputBuf;
+
   HANDLE stdoutPipeRead = NULL;
   HANDLE stdoutPipeWrite = NULL;
-};
+  std::jthread stdoutPipeReadThread;
 
-class IgIgGui {
-public:
-  bool show = true;
-
-  IgIgConsolePage pageConsole = IgIgConsolePage("Console");
-
-  static IgIgGui &instance();
-
-  void draw();
-  void toggle();
-private:
-  IgIgGui();
-  ~IgIgGui();
+  IgIgPageConsole();
 };
 
 template <typename Mutex>
@@ -100,10 +91,10 @@ protected:
                      formatted.begin() + msg.color_range_end);
       colored.append(reset.begin(), reset.end());
       colored.append(formatted.begin() + msg.color_range_end, formatted.end());
-      IgIgGui::instance().pageConsole.log(
+      IgIgPageConsole::instance().log(
           spdlog::fmt_lib::to_string(colored));
     } else {
-      IgIgGui::instance().pageConsole.log(
+      IgIgPageConsole::instance().log(
           spdlog::fmt_lib::to_string(formatted));
     }
   }

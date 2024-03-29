@@ -1,5 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <fcntl.h>
 #include <io.h>
 
@@ -9,34 +7,70 @@
 
 #include <imgui_stdlib.h>
 #include <winrt/base.h>
-#include <mimalloc.h>
 
-IgIgConsolePage::IgIgConsolePage(std::string name) : name(name) {
-  AllocConsole();
-  freopen("CONOUT$", "w", stdout);
-  CreatePipe(&stdoutPipeRead, &stdoutPipeWrite, NULL, 10240);
-
-  std::jthread readThread([this]() {
-    char buf[10240]{};
-    DWORD bufSize = 0;
-    while (true) {
-      bufSize = 0;
-      if (ReadFile(stdoutPipeRead, buf, 10240, &bufSize, NULL)) {
-        log(std::string(buf, bufSize));
-      } else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-      }
-    }
-  });
-  readThread.detach();
-
-  int redirectFd = _open_osfhandle((intptr_t)stdoutPipeWrite, _O_TEXT);
-  _dup2(redirectFd, _fileno(stdout));
-
-  FreeConsole();
+IgIgPageConsole &IgIgPageConsole::instance() {
+  static IgIgPageConsole IGIG_CONSOLE_PAGE;
+  return IGIG_CONSOLE_PAGE;
 }
 
-IgIgConsolePage::~IgIgConsolePage() {
+IgIgPageConsole::IgIgPageConsole() {
+  try {
+    winrt::check_bool(AllocConsole());
+
+    FILE *ignored = nullptr;
+    errno_t freopenResult = freopen_s(&ignored, "CONOUT$", "w", stdout);
+    if (freopenResult != 0) {
+      log("stdout redirect failed: freopen_s failed with {}", freopenResult);
+      winrt::check_bool(FreeConsole());
+      return;
+    }
+
+    winrt::check_bool(
+        CreatePipe(&stdoutPipeRead, &stdoutPipeWrite, NULL, 10240));
+
+    stdoutPipeReadThread = std::jthread([this](std::stop_token stoken) {
+      char buf[10240]{};
+      DWORD bufSize = 0;
+      while (!stoken.stop_requested()) {
+        bufSize = 0;
+        if (ReadFile(stdoutPipeRead, buf, 10240, &bufSize, NULL)) {
+          log(std::string(buf, bufSize));
+        } else {
+          std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
+      }
+    });
+
+    int redirectFd = _open_osfhandle((intptr_t)stdoutPipeWrite, _O_TEXT);
+    if (redirectFd == -1) {
+      log("stdout redirect failed: _open_osfhandle failed");
+      winrt::check_bool(FreeConsole());
+      stdoutPipeReadThread.request_stop();
+      return;
+    }
+
+    if (_dup2(redirectFd, _fileno(stdout)) == -1) {
+      log("stdout redirect failed: _dup2 failed with {}", errno);
+      winrt::check_bool(FreeConsole());
+      stdoutPipeReadThread.request_stop();
+      return;
+    }
+
+    winrt::check_bool(FreeConsole());
+  } catch (winrt::hresult_error e) {
+    FreeConsole();
+    log("stdout redirect failed: 0x{:X} {}", (uint32_t)e.code(),
+        winrt::to_string(e.message()));
+    stdoutPipeReadThread.request_stop();
+  }
+}
+
+IgIgPageConsole::~IgIgPageConsole() {
+  stdoutPipeReadThread.request_stop();
+  if (stdoutPipeReadThread.joinable()) {
+    stdoutPipeReadThread.join();
+  }
+
   if (stdoutPipeRead != NULL) {
     CloseHandle(stdoutPipeRead);
   }
@@ -46,8 +80,8 @@ IgIgConsolePage::~IgIgConsolePage() {
   }
 }
 
-void IgIgConsolePage::draw() {
-  if (ImGui::BeginTabItem(name.c_str())) {
+void IgIgPageConsole::draw() {
+  if (ImGui::BeginTabItem("Console")) {
     const float heightReserved =
         ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
     if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, -heightReserved),
@@ -87,7 +121,7 @@ void IgIgConsolePage::draw() {
       if (ImGui::InputText(
               "Input", &inputBuf, inputTextFlags,
               [](ImGuiInputTextCallbackData *data) {
-                IgIgConsolePage *console = (IgIgConsolePage *)data->UserData;
+                IgIgPageConsole *console = (IgIgPageConsole *)data->UserData;
                 return console->TextEditCallBack(data);
               },
               (void *)this)) {
@@ -108,17 +142,12 @@ void IgIgConsolePage::draw() {
   }
 }
 
-void IgIgConsolePage::clear() {
+void IgIgPageConsole::clear() {
   std::unique_lock lk(itemsMutex);
   items.clear();
 }
 
-static void mi_stats_print_forward(const char *msg, void *arg) {
-  IgIgConsolePage *page = (IgIgConsolePage*)arg;
-  page->log(std::string(msg));
-}
-
-void IgIgConsolePage::execCmd(const std::string &cmd) {
+void IgIgPageConsole::execCmd(const std::string &cmd) {
   log("\033[38m# {}", cmd);
 
   historyPos = -1;
@@ -155,15 +184,10 @@ void IgIgConsolePage::execCmd(const std::string &cmd) {
     return;
   }
 
-  if (cmd.starts_with("mistats")) {
-    mi_stats_print_out(mi_stats_print_forward, this);
-    return;
-  }
-
   log("\033[31mCommand not found");
 }
 
-int IgIgConsolePage::TextEditCallBack(ImGuiInputTextCallbackData *data) {
+int IgIgPageConsole::TextEditCallBack(ImGuiInputTextCallbackData *data) {
   switch (data->EventFlag) {
   case ImGuiInputTextFlags_CallbackHistory: {
     int64_t prevHistoryPos = historyPos;
@@ -182,9 +206,10 @@ int IgIgConsolePage::TextEditCallBack(ImGuiInputTextCallbackData *data) {
     }
 
     if (prevHistoryPos != historyPos) {
-      std::string historyStr = (historyPos >= 0 && (size_t)historyPos < history.size())
-                                   ? history[historyPos]
-                                   : "";
+      std::string historyStr =
+          (historyPos >= 0 && (size_t)historyPos < history.size())
+              ? history[historyPos]
+              : "";
       data->DeleteChars(0, data->BufTextLen);
       data->InsertChars(0, historyStr.c_str());
     }
@@ -193,37 +218,3 @@ int IgIgConsolePage::TextEditCallBack(ImGuiInputTextCallbackData *data) {
   }
   return 0;
 }
-
-IgIgGui &IgIgGui::instance() {
-  static IgIgGui IGIG_CONSOLE;
-  return IGIG_CONSOLE;
-}
-
-void IgIgGui::toggle() { show = !show; }
-
-void IgIgGui::draw() {
-  if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent, false)) {
-    toggle();
-  }
-
-  if (!show) {
-    return;
-  }
-
-  ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-  if (!ImGui::Begin("Journey Detour v4", &show)) {
-    ImGui::End();
-    return;
-  }
-
-  ImGuiTabBarFlags tabBarFlags = ImGuiTabBarFlags_None;
-  if (ImGui::BeginTabBar("Pages", tabBarFlags)) {
-    pageConsole.draw();
-  }
-
-  ImGui::End();
-}
-
-IgIgGui::IgIgGui() {}
-
-IgIgGui::~IgIgGui() {}

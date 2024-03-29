@@ -310,10 +310,8 @@ setmetatable(inspect, {
 )";
 
 
-   // Custom library used for various debug functions and communications between lua and C.
+// Custom library used for various debug functions and communications between lua and C.
 const char *lib_journeydetour = R"(
-
-
 function SpawnEvent( eventTable )
 	local eventBarn = _G[ "game" ]:eventBarn()
 	
@@ -347,10 +345,8 @@ end
 
 
 const char *lib_tickhook = R"(
-   
 function Tick( game, gameTiming, input )
     
 	
 end
- 
 )";

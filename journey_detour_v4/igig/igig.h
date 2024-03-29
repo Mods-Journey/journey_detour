@@ -6,6 +6,8 @@
 #include <winrt/base.h>
 #include <d3d11.h>
 
+#include "console.h"
+
 class IgIg {
 public:
   HWND window = NULL;
@@ -28,4 +30,18 @@ private:
   ~IgIg();
 
   bool tryHook();
+};
+
+class IgIgGui {
+public:
+  bool show = true;
+
+  static IgIgGui &instance();
+
+  void draw();
+  void toggle();
+
+private:
+  IgIgGui();
+  ~IgIgGui();
 };
