@@ -2,7 +2,7 @@
 
 ## Features
 - ImGui console with Lua code execution and stdout redirection
-- Load external Lua files directly in `Data/`
+- Loads external Lua files directly in `Data/`
 - Uses mimalloc as Lua allocator to remove memory limitations
 
 ## Build
