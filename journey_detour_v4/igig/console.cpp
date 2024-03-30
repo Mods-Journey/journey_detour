@@ -26,17 +26,30 @@ IgIgPageConsole::IgIgPageConsole() {
     }
 
     winrt::check_bool(
-        CreatePipe(&stdoutPipeRead, &stdoutPipeWrite, NULL, 10240));
+        CreatePipe(&stdoutPipeRead, &stdoutPipeWrite, NULL, 1048576));
 
     stdoutPipeReadThread = std::jthread([this](std::stop_token stoken) {
-      char buf[10240]{};
-      DWORD bufSize = 0;
+      std::string buf;
       while (!stoken.stop_requested()) {
-        bufSize = 0;
-        if (ReadFile(stdoutPipeRead, buf, 10240, &bufSize, NULL)) {
-          log(std::string(buf, bufSize));
+        DWORD totalBytesAvail = 0;
+        if (!PeekNamedPipe(stdoutPipeRead, NULL, 0, NULL, &totalBytesAvail,
+                           NULL)) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          continue;
+        }
+        if (totalBytesAvail <= 0) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          continue;
+        }
+        if (buf.size() < totalBytesAvail) {
+          buf.resize(totalBytesAvail, '\0');
+        }
+        DWORD realBufSize = 0;
+        if (ReadFile(stdoutPipeRead, buf.data(), totalBytesAvail, &realBufSize,
+                     NULL)) {
+          log(buf.substr(0, realBufSize));
         } else {
-          std::this_thread::sleep_for(std::chrono::milliseconds(20));
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
       }
     });
