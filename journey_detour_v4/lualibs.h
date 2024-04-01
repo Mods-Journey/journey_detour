@@ -350,3 +350,21 @@ function Tick( game, gameTiming, input )
 	
 end
 )";
+
+const char *lib_loaddecorations = R"(
+local function DecorationMeshes( resources, decBarn )
+	for i, meshDesc in ipairs( DecorationMeshInstances ) do
+		local deco = decBarn:AddDecoration( resources, meshDesc.Mesh, meshDesc.Shader, meshDesc.Transformation )
+
+		DecorationInitialize( resources, deco, meshDesc )
+
+		--if decoSoundTriggers[ meshDesc.Mesh ] then deco:hasSoundTriggers( true ) end
+		--if decoRumbleTriggers[ meshDesc.Mesh ] then deco:hasRumbleTriggers( true ) end
+
+		deco:SetEnabled( true )
+
+		Names[ meshDesc.ObjectName ] = deco
+	end
+end
+DecorationMeshes(game:resources(),DecorationBarn:new())
+)";

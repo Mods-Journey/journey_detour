@@ -22,6 +22,13 @@ typedef LUA_KCONTEXT lua_KContext;
 typedef int (*lua_KFunction)(lua_State *L, int status, lua_KContext ctx);
 typedef void *(*lua_Alloc)(void *ud, void *ptr, size_t osize, size_t nsize);
 
+struct vec_mat {
+  float m11, m12, m13, m14;
+  float m21, m22, m23, m24;
+  float m31, m32, m33, m34;
+  float m41, m42, m43, m44;
+};
+
 SIGSCAN_FUNC(lua_settop, "85 D2 78 34 48", __fastcall, void, lua_State *L,
              int idx);
 
