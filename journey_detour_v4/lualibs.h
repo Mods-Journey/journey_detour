@@ -314,6 +314,22 @@ return inspect
 
 // Custom library used for various debug functions and communications between lua and C.
 const char *lib_journeydetour = R"(
+
+function AddHullsToDrawList()
+    dofile("Data/Scripts/".. game:GetCurrentLevelString() .."/HullInstances.lua")
+    for k,v in pairs(HullInstances) do
+        if v.ObjectName ~= nil then
+            luaC_addHullToHudRender(v.Verts,v.Edges)
+        end
+    end
+
+end
+
+function UpdateHudCameraInfo()
+    local node = game:cameraSystem():GetCameraNode()
+    luaC_updateCameraInfo(node:GetProjMatrix(),node:GetWorldMatrix())
+end
+
 function SpawnEvent( eventTable )
 	local eventBarn = _G[ "game" ]:eventBarn()
 	

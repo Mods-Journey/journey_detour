@@ -19,6 +19,9 @@
     <Filter Include="Source Files\igig">
       <UniqueIdentifier>{b0609c56-994c-4d56-8897-894aeea06066}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\vectormath">
+      <UniqueIdentifier>{61e39edd-9b53-4ebc-8e22-a9db027aee81}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -37,6 +40,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="igig\mistats.cpp">
+      <Filter>Source Files\igig</Filter>
+    </ClCompile>
+    <ClCompile Include="igig\hud.cpp">
       <Filter>Source Files\igig</Filter>
     </ClCompile>
   </ItemGroup>
@@ -67,6 +73,12 @@
     </ClInclude>
     <ClInclude Include="igig\mistats.h">
       <Filter>Header Files\igig</Filter>
+    </ClInclude>
+    <ClInclude Include="igig\hud.h">
+      <Filter>Header Files\igig</Filter>
+    </ClInclude>
+    <ClInclude Include="vectormath\vectormath.hpp">
+      <Filter>Header Files\vectormath</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -104,6 +104,7 @@ void doImmediate(lua_State *L, std::string str) {
   }
 }
 
+
 SIGSCAN_HOOK(luaC_AddDecoration,
              "40 53 48 83 EC ?? 44 8B 91 ?? ?? ?? ?? 49 69 DA", __fastcall,
              __int64, uintptr_t decorationbarn, uintptr_t resources,
@@ -176,6 +177,8 @@ SIGSCAN_HOOK(GameUpdate, "40 55 53 56 57 41 55 41 56 48 8D AC 24", __fastcall,
   lua_State *L = *(lua_State **)(a1 + 32);
   DecorationBarn = *(__int64 *)(a1 + 0x138);
   LuaManager::instance().update(L);
+  doImmediate(L,"UpdateHudCameraInfo()");
+
   return GameUpdate(a1, a2);
 }
 

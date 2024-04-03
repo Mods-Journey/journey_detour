@@ -16,6 +16,28 @@
 
 #define LUA_KCONTEXT ptrdiff_t
 
+#define LUA_NUMBER double
+#define LUA_INTEGER long long
+
+
+typedef LUA_NUMBER lua_Number;
+typedef LUA_INTEGER lua_Integer;
+
+
+#define LUA_TNONE (-1)
+
+#define LUA_TNIL 0
+#define LUA_TBOOLEAN 1
+#define LUA_TLIGHTUSERDATA 2
+#define LUA_TNUMBER 3
+#define LUA_TSTRING 4
+#define LUA_TTABLE 5
+#define LUA_TFUNCTION 6
+#define LUA_TUSERDATA 7
+#define LUA_TTHREAD 8
+
+#define LUA_NUMTAGS 9
+
 typedef struct lua_State lua_State;
 typedef int (*lua_CFunction)(lua_State *L);
 typedef LUA_KCONTEXT lua_KContext;
@@ -47,11 +69,36 @@ SIGSCAN_FUNC(lua_pushcclosure,
 
 #define lua_pushcfunction(L, f) lua_pushcclosure(L, (f), 0)
 
+SIGSCAN_FUNC(lua_pushinteger,
+             "48 8B 41 ?? 48 89 10 C7 40 ?? ?? ?? ?? ?? 48 83 41 ?? ?? C3 CC "
+             "CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24",
+             __fastcall, void, lua_State *L, lua_Integer n)
+
+SIGSCAN_FUNC(luaL_checknumber, "48 89 5C 24 ?? 57 48 83 EC ?? 4C 8D 44 24",
+             __fastcall, lua_Number, lua_State *L, int arg);
+
+SIGSCAN_FUNC(
+lua_type,
+"48 83 EC ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? 48 3B C1",
+__fastcall, int, lua_State *L, int idx);
+SIGSCAN_FUNC(
+    lua_gettable,
+    "48 89 5C 24 ?? 57 48 83 EC ?? 48 8B D9 E8 ?? ?? ?? ?? 48 8B F8 83 78",
+    __fastcall, int, lua_State *L, int idx);
+
 SIGSCAN_FUNC(lua_tolstring,
              "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 8B D8 8B F2",
              __fastcall, const char *, lua_State *L, int idx, size_t *len);
 
 #define lua_tostring(L, i) lua_tolstring(L, (i), NULL)
+
+SIGSCAN_FUNC(lua_rawlen, "48 83 EC ?? E8 ?? ?? ?? ?? 8B 50", __fastcall, size_t,
+            lua_State *L, int idx);
+
+SIGSCAN_FUNC(
+    lua_tonumberx,
+    "40 53 48 83 EC ?? 49 8B D8 E8 ?? ?? ?? ?? 83 78 ?? ?? 75 ?? F2 0F 10 00",
+    __fastcall, lua_Number, lua_State *L, int idx, int *pisnum);
 
 SIGSCAN_FUNC(lua_callk, "48 89 5C 24 ?? 57 48 83 EC ?? 8D 42", __fastcall, void,
              lua_State *L, int nargs, int nresults, lua_KContext ctx,
