@@ -27,6 +27,8 @@ static void init() {
   igig.addDrawFunc([]() { IgIgGui::instance().draw(); });
   igig.startHookThread();
   __sigScanDispatchAll();
+  /*spdlog::info("test\ntest\ntest\ntest\ntest\ntest\ntest\ntest\ntest\ntest\ntes"
+               "t\ntest\ntest\ntest\ntest");*/
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {

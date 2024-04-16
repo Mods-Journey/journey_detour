@@ -39,7 +39,7 @@ static LRESULT CALLBACK igigWndProc(HWND hWnd, UINT msg, WPARAM wParam,
   }
 
   auto &io = ImGui::GetIO();
-  io.MouseDrawCursor = io.WantCaptureMouse;
+  io.MouseDrawCursor = IgIgGui::instance().show;
   
   if (io.WantCaptureMouse) {
     return true;

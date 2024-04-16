@@ -3,6 +3,7 @@
 #include "igig/hud.h"
 #include "igig/igig.h"
 #include "lualibs.h"
+
 #include <filesystem>
 #include <fstream>
 #include <random>
@@ -206,6 +207,38 @@ SIGSCAN_HOOK(InputRelated, "48 8B C4 55 56 57 41 55", __fastcall, bool,
     return true;
   }
   return InputRelated(a1);
+}
+
+SIGSCAN_HOOK(
+    luaB_print,
+    "48 89 5C 24 ?? 48 89 6C 24 ?? 56 57 41 56 48 83 EC ?? 48 8B F9 E8",
+    __fastcall, int, lua_State *L) 
+{
+  
+  int n = lua_gettop(L); /* number of arguments */
+  int i;
+  lua_getglobal(L, "tostring");
+  std::string buffer;
+  //spdlog::info("luabprint called, n:{}",n);
+  for (i = 1; i <= n; i++) {
+    const char *s;
+    size_t l;
+    lua_pushvalue(L, -1); /* function to be called */
+    lua_pushvalue(L, i);  /* value to print */
+    lua_call(L, 1, 1);
+    s = lua_tolstring(L, -1, &l); /* get result */
+    if (s == NULL) {
+      spdlog::error("'tostring' must return a string to 'print'");
+      return 0;
+    }
+      
+    if (i > 1)
+      buffer.push_back('\t');
+    buffer += std::string(s, l);
+    lua_pop(L, 1); /* pop result */
+  }
+  spdlog::info("Lua: {}", buffer);
+  return 0;
 }
 
 SIGSCAN_HOOK(

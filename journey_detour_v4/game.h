@@ -36,6 +36,8 @@ typedef LUA_INTEGER lua_Integer;
 
 #define LUA_NUMTAGS 9
 
+#define lua_call(L, n, r) lua_callk(L, (n), (r), 0, NULL)
+
 typedef struct lua_State lua_State;
 typedef int (*lua_CFunction)(lua_State *L);
 typedef LUA_KCONTEXT lua_KContext;
@@ -137,6 +139,15 @@ SIGSCAN_FUNC(lua_pcallk,
 
 SIGSCAN_FUNC(lua_gettop, "48 8B 41 ?? 48 8B 51 ?? 48 2B 10", __fastcall, int,
              lua_State *L);
+SIGSCAN_FUNC(lua_pushvalue, "48 83 EC ?? 4C 8B D1 E8 ?? ?? ?? ?? 49 8B 52",
+             __fastcall, void, lua_State *L, int idx);
+
+SIGSCAN_FUNC(
+    lua_getglobal,
+    "48 89 5C 24 ?? 57 48 83 EC ?? 48 8B 41 ?? 48 8B DA 48 8B F9 BA ?? ?? ?? "
+    "?? 48 8B 48 ?? E8 ?? ?? ?? ?? 48 8B D0 4C 8B C3 48 8B CF 48 8B 5C 24 ?? "
+    "48 83 C4 ?? 5F E9 ?? ?? ?? ?? CC CC CC CC CC CC 48 89 5C 24 ?? 57",
+    __fastcall, int, lua_State *L, const char *name);
 
 SIGSCAN_FUNC(lua_setglobal,
              "48 89 5C 24 ?? 57 48 83 EC ?? 48 8B 41 ?? 48 8B DA 48 8B F9 BA "

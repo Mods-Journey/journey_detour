@@ -8,15 +8,22 @@
 
 #include <imgui_stdlib.h>
 #include <winrt/base.h>
+#include <regex>
+std::regex colorCodeRegex("\x1b\[[0-9;]+m");
+std::string stripColorCodes(const std::string &input) {
+  
+  return std::regex_replace(input, colorCodeRegex, "");
+}
+
 
 std::string_view getLineAtIdx(size_t idx) {
   std::unique_lock lk(IgIgPageConsole::instance().itemsMutex);
-  return IgIgPageConsole::instance().items[idx];
+  return IgIgPageConsole::instance().rawItems[idx];
 }
 
 size_t getNumLines() {
   std::unique_lock lk(IgIgPageConsole::instance().itemsMutex);
-  return IgIgPageConsole::instance().items.size();
+  return IgIgPageConsole::instance().rawItems.size();
 }
 
 
@@ -27,8 +34,10 @@ IgIgPageConsole &IgIgPageConsole::instance() {
   static IgIgPageConsole IGIG_PAGE_CONSOLE;
   return IGIG_PAGE_CONSOLE;
 }
-
+#define IGIG_CONSOLE_PIPE_STDOUT
 IgIgPageConsole::IgIgPageConsole() {
+
+  #ifdef IGIG_CONSOLE_PIPE_STDOUT
   try {
     winrt::check_bool(AllocConsole());
 
@@ -92,7 +101,7 @@ IgIgPageConsole::IgIgPageConsole() {
     stdoutPipeReadThread.request_stop();
   }
 
-    
+  #endif
    
     
 

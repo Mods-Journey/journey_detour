@@ -3,11 +3,13 @@
 #include <string>
 #include <vector>
 #include <mutex>
-
+#include <string.h>
 #include "textselect.hpp"
 
 #include <imgui.h>
 #include <spdlog/sinks/base_sink.h>
+
+std::string stripColorCodes(const std::string &input);
 
 class IgIgPageConsole {
 public:
@@ -15,6 +17,7 @@ public:
   bool scrollToBottomNextFrame = false;
   
   std::vector<std::string> items;
+  std::vector<std::string> rawItems;
   std::mutex itemsMutex;
 
   static IgIgPageConsole &instance();
@@ -26,16 +29,28 @@ public:
   void execCmd(const std::string &cmd);
   inline void log(std::string &&msg) {
     std::unique_lock lk(itemsMutex);
-    items.push_back(msg);
+    char *next_token;
+    char *token = strtok_s(msg.data(),  "\n", &next_token);
+    while (token) {
+      items.push_back(std::string(token) + "\n");
+      rawItems.push_back(stripColorCodes(std::string(token) + "\n"));
+      token = strtok_s(NULL, "\n", &next_token);
+    }
+    
   }
 
   int TextEditCallBack(ImGuiInputTextCallbackData *data);
-  std::string_view getLineAtIdx(size_t idx);
-  size_t getNumLines();
   template <typename... T>
   inline void log(fmt::format_string<T...> fmt, T &&...args) {
     std::unique_lock lk(itemsMutex);
-    items.push_back(fmt::vformat(fmt, fmt::make_format_args(args...)));
+    std::string result = fmt::vformat(fmt, fmt::make_format_args(args...));
+    char *next_token;
+    char *token = strtok_s(result.data(), "\n", &next_token);
+    while (token) {
+      items.push_back(std::string(token) + "\n");
+      rawItems.push_back(stripColorCodes(std::string(token) + "\n"));
+      token = strtok_s(NULL, "\n", &next_token);
+    }
   }
 
 private:
