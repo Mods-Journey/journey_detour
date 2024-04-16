@@ -33,8 +33,6 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
   switch (fdwReason) {
   case DLL_PROCESS_ATTACH: {
     DisableThreadLibraryCalls(hinstDLL);
-    DWORD Options = SymGetOptions();
-    SymSetOptions(Options | 0x4002);
     std::jthread initThread(init);
     initThread.detach();
     break;

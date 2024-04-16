@@ -40,7 +40,7 @@ static LRESULT CALLBACK igigWndProc(HWND hWnd, UINT msg, WPARAM wParam,
 
   auto &io = ImGui::GetIO();
   io.MouseDrawCursor = io.WantCaptureMouse;
-
+  
   if (io.WantCaptureMouse) {
     return true;
   }
@@ -72,6 +72,7 @@ static HRESULT STDMETHODCALLTYPE igigPresent(IDXGISwapChain *pSwapChain,
 
       auto &io = ImGui::GetIO();
 
+      io.ConfigWindowsMoveFromTitleBarOnly = true;
       io.Fonts->AddFontDefault();
 
       ImFontConfig fontConfigYaHei;
@@ -96,6 +97,7 @@ static HRESULT STDMETHODCALLTYPE igigPresent(IDXGISwapChain *pSwapChain,
       ImGui_ImplDX11_CreateDeviceObjects();
       origWndProc = (WNDPROC)SetWindowLongPtrW(igig.window, GWLP_WNDPROC,
                                                (LONG_PTR)igigWndProc);
+      spdlog::info("origWndProc:{}", (uintptr_t)origWndProc);
 
       igig.inited = true;
     } else {

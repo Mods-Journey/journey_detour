@@ -1,6 +1,7 @@
 #include "game.h"
-#include "igig/hud.h"
 #include "igig/console.h"
+#include "igig/hud.h"
+#include "igig/igig.h"
 #include "lualibs.h"
 #include <filesystem>
 #include <fstream>
@@ -16,7 +17,6 @@ std::mt19937 gen(rd());
 uintptr_t DecorationBarn;
 
 std::vector<LobbyMember_t> LobbyMembers;
-
 
 LuaManager &LuaManager::instance() {
   static LuaManager LUA_MANAGER;
@@ -193,12 +193,19 @@ SIGSCAN_HOOK(lua_newstate, "40 55 56 41 56 48 83 EC ?? 48 8B EA", __fastcall,
   return lua_newstate(lua_mimalloc, nullptr);
 }
 
-SIGSCAN_HOOK(DebugLog,
-             "48 89 5C 24 ?? 57 48 83 EC ?? 48 8D 59 ?? 48 8B FA",__fastcall,void,__int64 a1,const char* buf) 
-{
+SIGSCAN_HOOK(DebugLog, "48 89 5C 24 ?? 57 48 83 EC ?? 48 8D 59 ?? 48 8B FA",
+             __fastcall, void, __int64 a1, const char *buf) {
   if (*((__int64 *)buf + 3) >= 0x10)
     IgIgPageConsole::instance().log("{}", *(const char **)buf);
   return DebugLog(a1, buf);
+}
+
+SIGSCAN_HOOK(InputRelated, "48 8B C4 55 56 57 41 55", __fastcall, bool,
+             __int64 a1) {
+  if (IgIg::instance().inited && IgIgGui::instance().show) {
+    return true;
+  }
+  return InputRelated(a1);
 }
 
 SIGSCAN_HOOK(
@@ -211,7 +218,9 @@ SIGSCAN_HOOK(
 
   __int64 v27 = Matchmaking[2];
 
-  // int GetLobbyChatEntry( CSteamID steamIDLobby, int iChatID, CSteamID *pSteamIDUser, void *pvData, int cubData, EChatEntryType *peChatEntryType );
+  // int GetLobbyChatEntry( CSteamID steamIDLobby, int iChatID, CSteamID
+  // *pSteamIDUser, void *pvData, int cubData, EChatEntryType *peChatEntryType
+  // );
   size_t result = (*(__int64(__fastcall **)(__int64, __int64, __int64, int *,
                                             char *, int, int *))(
       *(__int64 *)v27 + 216))(v27, Matchmaking[3], LobbyChatMsg->m_iChatID,
@@ -222,13 +231,13 @@ SIGSCAN_HOOK(
   float remoteZ = *(float *)(buffer + 8);
 
   bool exists = false;
-  for (auto& member : IgIgHud::instance().LobbyMembersRenderList) {
+  for (auto &member : IgIgHud::instance().LobbyMembersRenderList) {
     if (member.steamId == std::to_string(LobbyChatMsg->m_ulSteamIDUser)) {
       member.pos[0] = remoteX;
       member.pos[1] = remoteY;
       member.pos[2] = remoteZ;
       member.lastUpdate = std::chrono::steady_clock::now();
-      
+
       exists = true;
     } else {
       continue;
@@ -243,19 +252,19 @@ SIGSCAN_HOOK(
     ctx.color = ImColor(dis(gen), dis(gen), dis(gen));
     ctx.steamId = std::to_string(LobbyChatMsg->m_ulSteamIDUser);
     ctx.lastUpdate = std::chrono::steady_clock::now();
-    
+
     std::string persona_name;
     if (SteamFriends()) {
       auto ISteamFriends = SteamFriends();
-      persona_name = (const char *)(*(__int64(__fastcall **)(__int64, __int64))(*(__int64 *)ISteamFriends + 56))(ISteamFriends,LobbyChatMsg->m_ulSteamIDUser);
+      persona_name = (const char *)(*(__int64(__fastcall **)(__int64, __int64))(
+          *(__int64 *)ISteamFriends + 56))(ISteamFriends,
+                                           LobbyChatMsg->m_ulSteamIDUser);
     } else {
       persona_name = "???";
     }
     ctx.steamUsername = persona_name;
 
-
     IgIgHud::instance().LobbyMembersRenderList.push_back(ctx);
-  
   }
 
   return OnLobbyChat(Matchmaking, LobbyChatMsg);
