@@ -4,9 +4,24 @@
 #include "ansicolor.h"
 #include "console.h"
 #include "game.h"
+#include "hud.h"
 
 #include <imgui_stdlib.h>
 #include <winrt/base.h>
+
+std::string_view getLineAtIdx(size_t idx) {
+  std::unique_lock lk(IgIgPageConsole::instance().itemsMutex);
+  return IgIgPageConsole::instance().items[idx];
+}
+
+size_t getNumLines() {
+  std::unique_lock lk(IgIgPageConsole::instance().itemsMutex);
+  return IgIgPageConsole::instance().items.size();
+}
+
+
+TextSelect textSelect{getLineAtIdx,
+                      getNumLines};
 
 IgIgPageConsole &IgIgPageConsole::instance() {
   static IgIgPageConsole IGIG_PAGE_CONSOLE;
@@ -76,6 +91,11 @@ IgIgPageConsole::IgIgPageConsole() {
         winrt::to_string(e.message()));
     stdoutPipeReadThread.request_stop();
   }
+
+    
+   
+    
+
 }
 
 IgIgPageConsole::~IgIgPageConsole() {
@@ -115,6 +135,19 @@ void IgIgPageConsole::draw() {
           ImGui::TextAnsiUnformatted(item.c_str(), item.c_str() + item.size());
         }
       }
+      textSelect.update();
+      if (ImGui::BeginPopupContextWindow()) {
+        ImGui::BeginDisabled(!textSelect.hasSelection());
+        if (ImGui::MenuItem("Copy", "Ctrl+C"))
+          textSelect.copy();
+        ImGui::EndDisabled();
+
+        if (ImGui::MenuItem("Select all", "Ctrl+A"))
+          textSelect.selectAll();
+        ImGui::EndPopup();
+      }
+     
+
 
       if (scrollToBottomNextFrame ||
           (autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())) {
@@ -123,6 +156,9 @@ void IgIgPageConsole::draw() {
       scrollToBottomNextFrame = false;
 
       ImGui::PopStyleVar();
+
+    
+
       ImGui::EndChild();
       ImGui::Separator();
 
@@ -197,6 +233,37 @@ void IgIgPageConsole::execCmd(const std::string &cmd) {
     return;
   }
 
+  if (cmd.starts_with("coeff")) {
+    if (cmd.size() > sizeof("coeff")) {
+      
+    IgIgHud::instance().fovcoeff = stof(cmd.substr(sizeof("coeff")));
+    } else {
+      log("\033[31mExpected coeff, got nothing");
+    }
+    return;
+  }
+
+  if (cmd.starts_with("crop")) {
+    if (cmd.size() > sizeof("crop")) {
+
+      IgIgHud::instance().screencrop = stof(cmd.substr(sizeof("crop")));
+    } else {
+      log("\033[31mExpected crop, got nothing");
+    }
+    return;
+  }
+
+  if (cmd.starts_with("dist")) {
+    if (cmd.size() > sizeof("dist")) {
+
+      IgIgHud::instance().clipz = stof(cmd.substr(sizeof("dist")));
+    } else {
+      log("\033[31mExpected dist, got nothing");
+    }
+    return;
+  }
+
+
   log("\033[31mCommand not found");
 }
 
@@ -231,3 +298,4 @@ int IgIgPageConsole::TextEditCallBack(ImGuiInputTextCallbackData *data) {
   }
   return 0;
 }
+

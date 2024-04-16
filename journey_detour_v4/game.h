@@ -19,10 +19,8 @@
 #define LUA_NUMBER double
 #define LUA_INTEGER long long
 
-
 typedef LUA_NUMBER lua_Number;
 typedef LUA_INTEGER lua_Integer;
-
 
 #define LUA_TNONE (-1)
 
@@ -51,6 +49,35 @@ struct vec_mat {
   float m41, m42, m43, m44;
 };
 
+struct LobbyChatMsg_t {
+  uint64_t m_ulSteamIDLobby;
+  uint64_t m_ulSteamIDUser;
+  uint8_t m_eChatEntryType;
+  uint32_t m_iChatID;
+};
+
+struct LobbyMember_t {
+  uint64_t steamId;
+  float posX;
+  float posY;
+  float posZ;
+};
+
+SIGSCAN_FUNC(
+    SteamFriends,
+    "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 48 8B 1D ?? "
+    "?? ?? ?? 33 C0 89 44 24 ?? 48 85 DB 74 ?? F0 FF 43 ?? 48 8B 1D ?? ?? ?? "
+    "?? 48 8B 35 ?? ?? ?? ?? 48 8B FB 48 85 F6 74 ?? 48 85 DB 74 ?? F0 FF 43 "
+    "?? 48 8B 1D ?? ?? ?? ?? 48 8B 35 ?? ?? ?? ?? 48 8B 76 ?? B8 ?? ?? ?? ?? "
+    "EB ?? 48 8B 5C 24 ?? 48 8B F0 BD ?? ?? ?? ?? A8 ?? 74 ?? 48 85 DB 74 ?? "
+    "8B C5 F0 0F C1 43 ?? 83 F8 ?? 75 ?? 48 8B 03 48 8B CB FF 10 8B C5 F0 0F "
+    "C1 43 ?? 83 F8 ?? 75 ?? 48 8B 03 48 8B CB FF 50 ?? 48 85 FF 74 ?? 8B C5 "
+    "F0 0F C1 47 ?? 83 F8 ?? 75 ?? 48 8B 17 48 8B CF FF 12 F0 0F C1 6F ?? 83 "
+    "FD ?? 75 ?? 48 8B 17 48 8B CF FF 52 ?? 48 8B 5C 24 ?? 48 8B C6 48 8B 74 "
+    "24 ?? 48 8B 6C 24 ?? 48 83 C4 ?? 5F C3 CC CC CC CC CC CC CC CC CC CC CC "
+    "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 33 C0",
+    __fastcall, __int64);
+
 SIGSCAN_FUNC(lua_settop, "85 D2 78 34 48", __fastcall, void, lua_State *L,
              int idx);
 
@@ -77,10 +104,9 @@ SIGSCAN_FUNC(lua_pushinteger,
 SIGSCAN_FUNC(luaL_checknumber, "48 89 5C 24 ?? 57 48 83 EC ?? 4C 8D 44 24",
              __fastcall, lua_Number, lua_State *L, int arg);
 
-SIGSCAN_FUNC(
-lua_type,
-"48 83 EC ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? 48 3B C1",
-__fastcall, int, lua_State *L, int idx);
+SIGSCAN_FUNC(lua_type,
+             "48 83 EC ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? 48 3B C1",
+             __fastcall, int, lua_State *L, int idx);
 SIGSCAN_FUNC(
     lua_gettable,
     "48 89 5C 24 ?? 57 48 83 EC ?? 48 8B D9 E8 ?? ?? ?? ?? 48 8B F8 83 78",
@@ -93,7 +119,7 @@ SIGSCAN_FUNC(lua_tolstring,
 #define lua_tostring(L, i) lua_tolstring(L, (i), NULL)
 
 SIGSCAN_FUNC(lua_rawlen, "48 83 EC ?? E8 ?? ?? ?? ?? 8B 50", __fastcall, size_t,
-            lua_State *L, int idx);
+             lua_State *L, int idx);
 
 SIGSCAN_FUNC(
     lua_tonumberx,

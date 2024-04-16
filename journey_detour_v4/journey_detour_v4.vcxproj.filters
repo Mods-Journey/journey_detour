@@ -45,6 +45,9 @@
     <ClCompile Include="igig\hud.cpp">
       <Filter>Source Files\igig</Filter>
     </ClCompile>
+    <ClCompile Include="textselect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="igig\igig.h">
@@ -79,6 +82,9 @@
     </ClInclude>
     <ClInclude Include="vectormath\vectormath.hpp">
       <Filter>Header Files\vectormath</Filter>
+    </ClInclude>
+    <ClInclude Include="textselect.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

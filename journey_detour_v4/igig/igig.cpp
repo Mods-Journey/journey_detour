@@ -312,7 +312,7 @@ void IgIgGui::draw() {
   if (!show) {
     return;
   }
-
+  
   ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
   if (!ImGui::Begin("Journey Detour v4", &show)) {
     ImGui::End();

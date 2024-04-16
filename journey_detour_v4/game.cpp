@@ -1,16 +1,22 @@
 #include "game.h"
+#include "igig/hud.h"
+#include "igig/console.h"
 #include "lualibs.h"
-
 #include <filesystem>
 #include <fstream>
-
+#include <random>
 #include <winrt/base.h>
 
 #include <mimalloc.h>
 
 namespace fs = std::filesystem;
+std::random_device rd;
+std::mt19937 gen(rd());
 
 uintptr_t DecorationBarn;
+
+std::vector<LobbyMember_t> LobbyMembers;
+
 
 LuaManager &LuaManager::instance() {
   static LuaManager LUA_MANAGER;
@@ -104,7 +110,6 @@ void doImmediate(lua_State *L, std::string str) {
   }
 }
 
-
 SIGSCAN_HOOK(luaC_AddDecoration,
              "40 53 48 83 EC ?? 44 8B 91 ?? ?? ?? ?? 49 69 DA", __fastcall,
              __int64, uintptr_t decorationbarn, uintptr_t resources,
@@ -118,12 +123,13 @@ SIGSCAN_HOOK(luaC_AddDecoration,
 }
 
 SIGSCAN_HOOK(LoadDecorations, "48 89 4C 24 ?? 55 53 57 41 54 41 56", __fastcall,
-             int , __int64 decorationBarn, __int64 resourceManager, lua_State* L) {
+             int, __int64 decorationBarn, __int64 resourceManager,
+             lua_State *L) {
   std::string filePathString;
   uintptr_t v3 = *(uintptr_t *)(decorationBarn + 4407376);
   if (v3)
     v3 = *(uintptr_t *)(v3 + 16);
-  char* fileName = (char *)(v3 + 144);
+  char *fileName = (char *)(v3 + 144);
   if (*((uintptr_t *)fileName + 3) >= 0x10ui64)
     filePathString = *(char **)fileName;
 
@@ -132,19 +138,19 @@ SIGSCAN_HOOK(LoadDecorations, "48 89 4C 24 ?? 55 53 57 41 54 41 56", __fastcall,
 
   if (filePath.extension() == ".bin") {
     filePath.replace_extension("");
-    
-    if (std::ifstream fileStream{filePath,
-                                 std::ios::binary | std::ios::ate}) {
+
+    if (std::ifstream fileStream{filePath, std::ios::binary | std::ios::ate}) {
       spdlog::info("[\033[32mExternalLua\033[m] Loading {}",
                    winrt::to_string(filePath.wstring()));
       size_t fileSize = fileStream.tellg();
       std::vector<char> buf(fileSize, '\0');
       fileStream.seekg(0);
       fileStream.read(buf.data(), buf.size());
-      doImmediate(L,buf.data());
+      doImmediate(L, buf.data());
       doImmediate(L, lib_loaddecorations);
     } else {
-      spdlog::warn("Error while loading {}",winrt::to_string(filePath.wstring()));
+      spdlog::warn("Error while loading {}",
+                   winrt::to_string(filePath.wstring()));
       return LoadDecorations(decorationBarn, resourceManager, L);
     }
   }
@@ -177,7 +183,7 @@ SIGSCAN_HOOK(GameUpdate, "40 55 53 56 57 41 55 41 56 48 8D AC 24", __fastcall,
   lua_State *L = *(lua_State **)(a1 + 32);
   DecorationBarn = *(__int64 *)(a1 + 0x138);
   LuaManager::instance().update(L);
-  doImmediate(L,"UpdateHudCameraInfo()");
+  doImmediate(L, "UpdateHudCameraInfo()");
 
   return GameUpdate(a1, a2);
 }
@@ -185,4 +191,72 @@ SIGSCAN_HOOK(GameUpdate, "40 55 53 56 57 41 55 41 56 48 8D AC 24", __fastcall,
 SIGSCAN_HOOK(lua_newstate, "40 55 56 41 56 48 83 EC ?? 48 8B EA", __fastcall,
              lua_State *, lua_Alloc f, void *ud) {
   return lua_newstate(lua_mimalloc, nullptr);
+}
+
+SIGSCAN_HOOK(DebugLog,
+             "48 89 5C 24 ?? 57 48 83 EC ?? 48 8D 59 ?? 48 8B FA",__fastcall,void,__int64 a1,const char* buf) 
+{
+  if (*((__int64 *)buf + 3) >= 0x10)
+    IgIgPageConsole::instance().log("{}", *(const char **)buf);
+  return DebugLog(a1, buf);
+}
+
+SIGSCAN_HOOK(
+    OnLobbyChat,
+    "48 89 54 24 ?? 55 53 56 57 41 54 41 55 41 56 48 8D AC 24 ?? ?? ?? ?? B8",
+    __fastcall, void, __int64 *Matchmaking, LobbyChatMsg_t *LobbyChatMsg) {
+
+  int fromuserid;
+  char buffer[4097];
+
+  __int64 v27 = Matchmaking[2];
+
+  // int GetLobbyChatEntry( CSteamID steamIDLobby, int iChatID, CSteamID *pSteamIDUser, void *pvData, int cubData, EChatEntryType *peChatEntryType );
+  size_t result = (*(__int64(__fastcall **)(__int64, __int64, __int64, int *,
+                                            char *, int, int *))(
+      *(__int64 *)v27 + 216))(v27, Matchmaking[3], LobbyChatMsg->m_iChatID,
+                              &fromuserid, buffer, 4096, NULL);
+
+  float remoteX = *(float *)buffer;
+  float remoteY = *(float *)(buffer + 4);
+  float remoteZ = *(float *)(buffer + 8);
+
+  bool exists = false;
+  for (auto& member : IgIgHud::instance().LobbyMembersRenderList) {
+    if (member.steamId == std::to_string(LobbyChatMsg->m_ulSteamIDUser)) {
+      member.pos[0] = remoteX;
+      member.pos[1] = remoteY;
+      member.pos[2] = remoteZ;
+      member.lastUpdate = std::chrono::steady_clock::now();
+      
+      exists = true;
+    } else {
+      continue;
+    }
+  }
+  if (!exists) {
+    LobbyMemberRenderContext ctx;
+    std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+    ctx.pos[0] = remoteX;
+    ctx.pos[1] = remoteY;
+    ctx.pos[2] = remoteZ;
+    ctx.color = ImColor(dis(gen), dis(gen), dis(gen));
+    ctx.steamId = std::to_string(LobbyChatMsg->m_ulSteamIDUser);
+    ctx.lastUpdate = std::chrono::steady_clock::now();
+    
+    std::string persona_name;
+    if (SteamFriends()) {
+      auto ISteamFriends = SteamFriends();
+      persona_name = (const char *)(*(__int64(__fastcall **)(__int64, __int64))(*(__int64 *)ISteamFriends + 56))(ISteamFriends,LobbyChatMsg->m_ulSteamIDUser);
+    } else {
+      persona_name = "???";
+    }
+    ctx.steamUsername = persona_name;
+
+
+    IgIgHud::instance().LobbyMembersRenderList.push_back(ctx);
+  
+  }
+
+  return OnLobbyChat(Matchmaking, LobbyChatMsg);
 }

@@ -327,7 +327,7 @@ end
 
 function UpdateHudCameraInfo()
     local node = game:cameraSystem():GetCameraNode()
-    luaC_updateCameraInfo(node:GetProjMatrix(),node:GetWorldMatrix())
+    luaC_updateCameraInfo(node:GetWorldMatrix(),node:GetFov(),node:GetAspect(),node:GetNearPlane(),node:GetFarPlane())
 end
 
 function SpawnEvent( eventTable )

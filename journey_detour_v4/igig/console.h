@@ -4,6 +4,8 @@
 #include <vector>
 #include <mutex>
 
+#include "textselect.hpp"
+
 #include <imgui.h>
 #include <spdlog/sinks/base_sink.h>
 
@@ -11,6 +13,9 @@ class IgIgPageConsole {
 public:
   bool autoScroll = true;
   bool scrollToBottomNextFrame = false;
+  
+  std::vector<std::string> items;
+  std::mutex itemsMutex;
 
   static IgIgPageConsole &instance();
 
@@ -25,7 +30,8 @@ public:
   }
 
   int TextEditCallBack(ImGuiInputTextCallbackData *data);
-  
+  std::string_view getLineAtIdx(size_t idx);
+  size_t getNumLines();
   template <typename... T>
   inline void log(fmt::format_string<T...> fmt, T &&...args) {
     std::unique_lock lk(itemsMutex);
@@ -36,8 +42,7 @@ private:
   std::vector<std::string> history;
   int64_t historyPos = -1;
 
-  std::vector<std::string> items;
-  std::mutex itemsMutex;
+ 
 
   std::string inputBuf;
 
