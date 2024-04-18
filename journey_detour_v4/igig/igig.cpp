@@ -304,7 +304,10 @@ IgIgGui &IgIgGui::instance() {
   return IGIG_CONSOLE;
 }
 
-void IgIgGui::toggle() { show = !show; }
+void IgIgGui::toggle() {
+  IgIgPageConsole::instance().reclaimFocusOnShow = true;
+  show = !show; 
+}
 
 void IgIgGui::draw() {
   if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent, false)) {

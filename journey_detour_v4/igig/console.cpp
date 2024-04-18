@@ -7,14 +7,13 @@
 #include "hud.h"
 
 #include <imgui_stdlib.h>
-#include <winrt/base.h>
 #include <regex>
+#include <winrt/base.h>
 std::regex colorCodeRegex("\x1b\[[0-9;]+m");
 std::string stripColorCodes(const std::string &input) {
-  
+
   return std::regex_replace(input, colorCodeRegex, "");
 }
-
 
 std::string_view getLineAtIdx(size_t idx) {
   std::unique_lock lk(IgIgPageConsole::instance().itemsMutex);
@@ -26,9 +25,7 @@ size_t getNumLines() {
   return IgIgPageConsole::instance().rawItems.size();
 }
 
-
-TextSelect textSelect{getLineAtIdx,
-                      getNumLines};
+TextSelect textSelect{getLineAtIdx, getNumLines};
 
 IgIgPageConsole &IgIgPageConsole::instance() {
   static IgIgPageConsole IGIG_PAGE_CONSOLE;
@@ -37,7 +34,7 @@ IgIgPageConsole &IgIgPageConsole::instance() {
 #define IGIG_CONSOLE_PIPE_STDOUT
 IgIgPageConsole::IgIgPageConsole() {
 
-  #ifdef IGIG_CONSOLE_PIPE_STDOUT
+#ifdef IGIG_CONSOLE_PIPE_STDOUT
   try {
     winrt::check_bool(AllocConsole());
 
@@ -101,10 +98,7 @@ IgIgPageConsole::IgIgPageConsole() {
     stdoutPipeReadThread.request_stop();
   }
 
-  #endif
-   
-    
-
+#endif
 }
 
 IgIgPageConsole::~IgIgPageConsole() {
@@ -155,8 +149,6 @@ void IgIgPageConsole::draw() {
           textSelect.selectAll();
         ImGui::EndPopup();
       }
-     
-
 
       if (scrollToBottomNextFrame ||
           (autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())) {
@@ -165,8 +157,6 @@ void IgIgPageConsole::draw() {
       scrollToBottomNextFrame = false;
 
       ImGui::PopStyleVar();
-
-    
 
       ImGui::EndChild();
       ImGui::Separator();
@@ -191,7 +181,8 @@ void IgIgPageConsole::draw() {
       }
 
       ImGui::SetItemDefaultFocus();
-      if (reclaimFocusNextFrame) {
+      if (reclaimFocusNextFrame || reclaimFocusOnShow) {
+        reclaimFocusOnShow = false;
         ImGui::SetKeyboardFocusHere(-1);
       }
     }
@@ -232,6 +223,40 @@ void IgIgPageConsole::execCmd(const std::string &cmd) {
     return;
   }
 
+  if (cmd.starts_with("dofile")) {
+    if (cmd.size() > sizeof("dofile")) {
+      LuaManager::instance().doNextFrame("dofile(\"" +
+                                         cmd.substr(sizeof("dofile")) + "\")");
+    } else {
+      log("\033[31mExpected lua filename, got nothing");
+    }
+    return;
+  }
+
+  if (cmd.starts_with("tp")) {
+    if (cmd.size() > sizeof("tp")) {
+
+      if (cmd.substr(sizeof("tp")) == "goto") {
+        LuaManager::instance().doNextFrame(
+            "game:playerBarn():GetLocalDude():SetPos(game:playerBarn():"
+            "GetRemoteDude():GetPos())");
+        return;
+      }
+      if (cmd.substr(sizeof("tp")) == "bring") {
+        LuaManager::instance().doNextFrame(
+            "game:playerBarn():GetRemoteDude():SetPos(game:playerBarn():"
+            "GetLocalDude():GetPos())");
+        return;
+      }
+
+      std::string target_pos = cmd.substr(sizeof("tp"));
+      LuaManager::instance().doNextFrame("game:playerBarn():GetLocalDude():SetPos({" + target_pos + "})");
+    } else {
+      log("\033[31mExpected lua filename, got nothing");
+    }
+    return;
+  }
+
   if (cmd.starts_with("inspect")) {
     if (cmd.size() > sizeof("inspect")) {
       LuaManager::instance().doNextFrame("print(inspect({}))",
@@ -244,8 +269,8 @@ void IgIgPageConsole::execCmd(const std::string &cmd) {
 
   if (cmd.starts_with("coeff")) {
     if (cmd.size() > sizeof("coeff")) {
-      
-    IgIgHud::instance().fovcoeff = stof(cmd.substr(sizeof("coeff")));
+
+      IgIgHud::instance().fovcoeff = stof(cmd.substr(sizeof("coeff")));
     } else {
       log("\033[31mExpected coeff, got nothing");
     }
@@ -271,7 +296,6 @@ void IgIgPageConsole::execCmd(const std::string &cmd) {
     }
     return;
   }
-
 
   log("\033[31mCommand not found");
 }
@@ -307,4 +331,3 @@ int IgIgPageConsole::TextEditCallBack(ImGuiInputTextCallbackData *data) {
   }
   return 0;
 }
-

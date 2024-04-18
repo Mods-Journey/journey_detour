@@ -6,6 +6,8 @@
 #include "imgui.h"
 
 
+
+
 struct HullRenderContext 
 {
   std::vector<float> edges;
@@ -41,6 +43,9 @@ public:
   std::vector<LobbyMemberRenderContext> LobbyMembersRenderList; 
   std::vector<HullRenderContext*> hullRenderList;
   std::mutex hullRenderListMutex;
+
+  float localDudePos[3];
+  std::string remoteDudeName;
 
 private:
 

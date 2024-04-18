@@ -185,6 +185,7 @@ SIGSCAN_HOOK(GameUpdate, "40 55 53 56 57 41 55 41 56 48 8D AC 24", __fastcall,
   DecorationBarn = *(__int64 *)(a1 + 0x138);
   LuaManager::instance().update(L);
   doImmediate(L, "UpdateHudCameraInfo()");
+  doImmediate(L, "UpdateHudLocalDudeInfo()");
 
   return GameUpdate(a1, a2);
 }

@@ -80,6 +80,17 @@ static int luaC_addHullToHudRender(lua_State *L) {
 
   return 0;
 }
+
+static int luaC_updateLocalDudeInfo(lua_State *L) {
+  IgIgHud::instance().localDudePos[2] = luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  IgIgHud::instance().localDudePos[1] = luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  IgIgHud::instance().localDudePos[0] = luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  return 0;
+}
+
 // fov aspect near far
 static int luaC_updateCameraInfo(lua_State *L) {
   IgIgHud::instance().farPlane = luaL_checknumber(L, -1);
@@ -144,12 +155,17 @@ void IgIgHud::draw() {
     // auto rotQuat = Quat(cameraRot[0], cameraRot[1], cameraRot[2],
     // cameraRot[3]);
 
+    std::string formatted =
+        fmt::format("Pos: {:.2f}, {:.2f}, {:.2f}", localDudePos[0], localDudePos[1],
+                    localDudePos[2]);
+    
+    ImGui::Text(formatted.c_str());
+
     ImVec2 displaySize = ImGui::GetIO().DisplaySize;
     Matrix4 worldMat = Float4ToMatrix4(worldMatrix);
     Matrix4 projMat = CameraParamToProj(fov, aspect, nearPlane, farPlane,
                                         displaySize.x, displaySize.y);
 
-    
     for (const auto &member : LobbyMembersRenderList) {
       auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                          std::chrono::steady_clock::now() - member.lastUpdate)
@@ -262,6 +278,8 @@ void IgIgHud::draw() {
 
 IgIgHud::IgIgHud() {
 
+  LuaManager::instance().registerGlobal("luaC_updateLocalDudeInfo",
+                                        luaC_updateLocalDudeInfo);
   LuaManager::instance().registerGlobal("luaC_updateCameraInfo",
                                         luaC_updateCameraInfo);
   LuaManager::instance().registerGlobal("luaC_addHullToHudRender",

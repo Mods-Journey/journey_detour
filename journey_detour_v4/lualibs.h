@@ -325,6 +325,11 @@ function AddHullsToDrawList()
 
 end
 
+function UpdateHudLocalDudeInfo()
+    local pos = game:playerBarn():GetLocalDude():GetPos()
+    luaC_updateLocalDudeInfo(pos[1],pos[2],pos[3])
+end
+
 function UpdateHudCameraInfo()
     local node = game:cameraSystem():GetCameraNode()
     luaC_updateCameraInfo(node:GetWorldMatrix(),node:GetFov(),node:GetAspect(),node:GetNearPlane(),node:GetFarPlane())

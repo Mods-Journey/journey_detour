@@ -15,7 +15,7 @@ class IgIgPageConsole {
 public:
   bool autoScroll = true;
   bool scrollToBottomNextFrame = false;
-  
+  bool reclaimFocusOnShow = false;
   std::vector<std::string> items;
   std::vector<std::string> rawItems;
   std::mutex itemsMutex;
