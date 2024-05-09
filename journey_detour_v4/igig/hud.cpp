@@ -155,11 +155,17 @@ void IgIgHud::draw() {
     // auto rotQuat = Quat(cameraRot[0], cameraRot[1], cameraRot[2],
     // cameraRot[3]);
 
-    std::string formatted =
+    std::string posstr =
         fmt::format("Pos: {:.2f}, {:.2f}, {:.2f}", localDudePos[0], localDudePos[1],
                     localDudePos[2]);
-    
-    ImGui::Text(formatted.c_str());
+    std::string decorationstr =
+        fmt::format("Decorations: {}", DecorationBarn::instance().getDecorationCount());
+
+
+
+    ImGui::Text(posstr.c_str());
+    ImGui::Text(decorationstr.c_str());
+
 
     ImVec2 displaySize = ImGui::GetIO().DisplaySize;
     Matrix4 worldMat = Float4ToMatrix4(worldMatrix);

@@ -178,3 +178,18 @@ private:
 
   LuaManager();
 };
+
+
+
+
+class DecorationBarn {
+public:
+  static DecorationBarn &instance();
+  uintptr_t base();
+  void update(uintptr_t game);
+  int getDecorationCount();
+
+private:
+  DecorationBarn();
+  uintptr_t decobarn = 0;
+};

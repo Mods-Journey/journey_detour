@@ -15,7 +15,6 @@ namespace fs = std::filesystem;
 std::random_device rd;
 std::mt19937 gen(rd());
 
-uintptr_t DecorationBarn;
 
 std::vector<LobbyMember_t> LobbyMembers;
 
@@ -119,7 +118,9 @@ SIGSCAN_HOOK(luaC_AddDecoration,
       "ptr:{},size:{},mesh:{},shader:{}",
       DecorationBarn + (*(unsigned int *)(DecorationBarn + 4407312) * 4304),
       *(unsigned int *)(DecorationBarn + 4407312), meshname, shadername);*/
-  return luaC_AddDecoration(DecorationBarn, resources, meshname, shadername,
+  return luaC_AddDecoration(DecorationBarn::instance().base(), resources,
+                            meshname,
+                            shadername,
                             mat);
 }
 
@@ -182,8 +183,9 @@ SIGSCAN_HOOK(
 SIGSCAN_HOOK(GameUpdate, "40 55 53 56 57 41 55 41 56 48 8D AC 24", __fastcall,
              __int64, __int64 a1, float a2) {
   lua_State *L = *(lua_State **)(a1 + 32);
-  DecorationBarn = *(__int64 *)(a1 + 0x138);
   LuaManager::instance().update(L);
+  DecorationBarn::instance().update(a1);
+
   doImmediate(L, "UpdateHudCameraInfo()");
   doImmediate(L, "UpdateHudLocalDudeInfo()");
 
@@ -302,4 +304,25 @@ SIGSCAN_HOOK(
   }
 
   return OnLobbyChat(Matchmaking, LobbyChatMsg);
+}
+
+DecorationBarn::DecorationBarn() {}
+
+DecorationBarn &DecorationBarn::instance() {
+  static DecorationBarn DECORATION_BARN;
+  return DECORATION_BARN;
+}
+
+void DecorationBarn::update(uintptr_t game) {
+  decobarn = *(__int64 *)(game + 0x138);
+}
+
+uintptr_t DecorationBarn::base() { 
+    return decobarn; 
+}
+
+int DecorationBarn::getDecorationCount() { 
+  if (decobarn == 0)
+    return 0; 
+  return *(unsigned int *)(decobarn + 4407312);
 }
