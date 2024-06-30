@@ -162,7 +162,7 @@ void IgIgHud::draw() {
         fmt::format("Decorations: {}", DecorationBarn::instance().getDecorationCount());
 
 
-
+    ImGui::Text("Journey Detour v4.0.1");
     ImGui::Text(posstr.c_str());
     ImGui::Text(decorationstr.c_str());
 
