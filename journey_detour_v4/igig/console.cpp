@@ -267,35 +267,16 @@ void IgIgPageConsole::execCmd(const std::string &cmd) {
     return;
   }
 
-  if (cmd.starts_with("coeff")) {
-    if (cmd.size() > sizeof("coeff")) {
 
-      IgIgHud::instance().fovcoeff = stof(cmd.substr(sizeof("coeff")));
+  if (cmd.starts_with("pressure")) {
+    if (cmd.size() > sizeof("pressure")) {
+      ShoutBarn::instance().SetPressure(stof(cmd.substr(sizeof("pressure"))));
     } else {
-      log("\033[31mExpected coeff, got nothing");
+      log("\033[31mExpected pressure, got nothing");
     }
     return;
   }
 
-  if (cmd.starts_with("crop")) {
-    if (cmd.size() > sizeof("crop")) {
-
-      IgIgHud::instance().screencrop = stof(cmd.substr(sizeof("crop")));
-    } else {
-      log("\033[31mExpected crop, got nothing");
-    }
-    return;
-  }
-
-  if (cmd.starts_with("dist")) {
-    if (cmd.size() > sizeof("dist")) {
-
-      IgIgHud::instance().clipz = stof(cmd.substr(sizeof("dist")));
-    } else {
-      log("\033[31mExpected dist, got nothing");
-    }
-    return;
-  }
 
   log("\033[31mCommand not found");
 }

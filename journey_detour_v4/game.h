@@ -78,23 +78,23 @@ SIGSCAN_FUNC(
     "FD ?? 75 ?? 48 8B 17 48 8B CF FF 52 ?? 48 8B 5C 24 ?? 48 8B C6 48 8B 74 "
     "24 ?? 48 8B 6C 24 ?? 48 83 C4 ?? 5F C3 CC CC CC CC CC CC CC CC CC CC CC "
     "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 33 C0",
-    __fastcall, __int64);
+    __fastcall, __int64)
 
 SIGSCAN_FUNC(lua_settop, "85 D2 78 34 48", __fastcall, void, lua_State *L,
-             int idx);
+             int idx)
 
 #define lua_pop(L, n) lua_settop(L, -(n)-1)
 
 SIGSCAN_FUNC(luaL_loadstring, "48 83 EC 48 48 89 54 24 30 48", __fastcall, int,
-             lua_State *L, const char *s);
+             lua_State *L, const char *s)
 
 SIGSCAN_FUNC(luaL_loadbufferx, "48 83 EC ?? 48 8B 44 24 ?? 48 89 54 24",
              __fastcall, int, lua_State *L, const char *buff, size_t size,
-             const char *name, const char *mode);
+             const char *name, const char *mode)
 
 SIGSCAN_FUNC(lua_pushcclosure,
              "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 63 F8",
-             __fastcall, void, lua_State *L, lua_CFunction fn, int n);
+             __fastcall, void, lua_State *L, lua_CFunction fn, int n)
 
 #define lua_pushcfunction(L, f) lua_pushcclosure(L, (f), 0)
 
@@ -104,57 +104,57 @@ SIGSCAN_FUNC(lua_pushinteger,
              __fastcall, void, lua_State *L, lua_Integer n)
 
 SIGSCAN_FUNC(luaL_checknumber, "48 89 5C 24 ?? 57 48 83 EC ?? 4C 8D 44 24",
-             __fastcall, lua_Number, lua_State *L, int arg);
+             __fastcall, lua_Number, lua_State *L, int arg)
 
 SIGSCAN_FUNC(lua_type,
              "48 83 EC ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? 48 3B C1",
-             __fastcall, int, lua_State *L, int idx);
+             __fastcall, int, lua_State *L, int idx)
 SIGSCAN_FUNC(
     lua_gettable,
     "48 89 5C 24 ?? 57 48 83 EC ?? 48 8B D9 E8 ?? ?? ?? ?? 48 8B F8 83 78",
-    __fastcall, int, lua_State *L, int idx);
+    __fastcall, int, lua_State *L, int idx)
 
 SIGSCAN_FUNC(lua_tolstring,
              "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 8B D8 8B F2",
-             __fastcall, const char *, lua_State *L, int idx, size_t *len);
+             __fastcall, const char *, lua_State *L, int idx, size_t *len)
 
 #define lua_tostring(L, i) lua_tolstring(L, (i), NULL)
 
 SIGSCAN_FUNC(lua_rawlen, "48 83 EC ?? E8 ?? ?? ?? ?? 8B 50", __fastcall, size_t,
-             lua_State *L, int idx);
+             lua_State *L, int idx)
 
 SIGSCAN_FUNC(
     lua_tonumberx,
     "40 53 48 83 EC ?? 49 8B D8 E8 ?? ?? ?? ?? 83 78 ?? ?? 75 ?? F2 0F 10 00",
-    __fastcall, lua_Number, lua_State *L, int idx, int *pisnum);
+    __fastcall, lua_Number, lua_State *L, int idx, int *pisnum)
 
 SIGSCAN_FUNC(lua_callk, "48 89 5C 24 ?? 57 48 83 EC ?? 8D 42", __fastcall, void,
              lua_State *L, int nargs, int nresults, lua_KContext ctx,
-             lua_KFunction k);
+             lua_KFunction k)
 
 SIGSCAN_FUNC(lua_pcallk,
              "48 89 74 24 ?? 57 48 83 EC ?? 33 F6 48 89 6C 24 ?? 41 8B E8",
              __fastcall, int, lua_State *L, int nargs, int nresults,
-             int errfunc, lua_KContext ctx, lua_KFunction k);
+             int errfunc, lua_KContext ctx, lua_KFunction k)
 
 SIGSCAN_FUNC(lua_gettop, "48 8B 41 ?? 48 8B 51 ?? 48 2B 10", __fastcall, int,
-             lua_State *L);
+             lua_State *L)
 SIGSCAN_FUNC(lua_pushvalue, "48 83 EC ?? 4C 8B D1 E8 ?? ?? ?? ?? 49 8B 52",
-             __fastcall, void, lua_State *L, int idx);
+             __fastcall, void, lua_State *L, int idx)
 
 SIGSCAN_FUNC(
     lua_getglobal,
     "48 89 5C 24 ?? 57 48 83 EC ?? 48 8B 41 ?? 48 8B DA 48 8B F9 BA ?? ?? ?? "
     "?? 48 8B 48 ?? E8 ?? ?? ?? ?? 48 8B D0 4C 8B C3 48 8B CF 48 8B 5C 24 ?? "
     "48 83 C4 ?? 5F E9 ?? ?? ?? ?? CC CC CC CC CC CC 48 89 5C 24 ?? 57",
-    __fastcall, int, lua_State *L, const char *name);
+    __fastcall, int, lua_State *L, const char *name)
 
 SIGSCAN_FUNC(lua_setglobal,
              "48 89 5C 24 ?? 57 48 83 EC ?? 48 8B 41 ?? 48 8B DA 48 8B F9 BA "
              "?? ?? ?? ?? 48 8B 48 ?? E8 ?? ?? ?? ?? 48 8B D0 4C 8B C3 48 8B "
              "CF 48 8B 5C 24 ?? 48 83 C4 ?? 5F E9 ?? ?? ?? ?? CC CC CC CC CC "
              "CC 48 89 5C 24 ?? 48 89 74 24",
-             __fastcall, void, lua_State *L, const char *name);
+             __fastcall, void, lua_State *L, const char *name)
 
 class LuaManager {
 public:
@@ -192,4 +192,15 @@ public:
 private:
   DecorationBarn();
   uintptr_t decobarn = 0;
+};
+
+class ShoutBarn {
+public:
+  static ShoutBarn &instance();
+  inline float GetPressure() const { return pressure; }
+  inline void SetPressure(float p) { pressure = p; }
+
+private:
+  ShoutBarn();
+  float pressure = 0.0;
 };

@@ -110,6 +110,26 @@ void doImmediate(lua_State *L, std::string str) {
   }
 }
 
+SIGSCAN_HOOK(PlayerShout,
+             "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 48 89 7C 24 ?? 41 "
+             "54 41 56 41 57 48 81 EC ?? ?? ?? ?? 4C 8B BC 24",
+             __fastcall, uint64_t, float a1, float a2, __int64 a3, __int64 a4,
+             __int64 a5, __int64 a6, __int64 a7, __int64 a8, float pressure,
+             __int64 a10) 
+{
+  auto p = ShoutBarn::instance().GetPressure();
+  spdlog::info("PlayerShout: {} {} {}", a1, a2, p);
+  return PlayerShout(a1, a2, a3, a4, a5, a6, a7, a8,
+                     p, a10);
+}
+
+SIGSCAN_HOOK(DoShoutImpl, "40 56 57 48 81 EC ?? ?? ?? ?? 33 C0", __fastcall,
+             void, __int64 a1, __int64 *a2, __int64 a3, char a4) {
+  spdlog::info("DoShoutImpl: {} {} {}", *((float *)a2 + 4), *((float *)a2 + 8),
+               *(__int32 *)(a3 + 48));
+  return DoShoutImpl(a1, a2, a3, a4);
+}
+
 SIGSCAN_HOOK(luaC_AddDecoration,
              "40 53 48 83 EC ?? 44 8B 91 ?? ?? ?? ?? 49 69 DA", __fastcall,
              __int64, uintptr_t decorationbarn, uintptr_t resources,
@@ -326,3 +346,11 @@ int DecorationBarn::getDecorationCount() {
     return 0; 
   return *(unsigned int *)(decobarn + 4407312);
 }
+
+
+
+ShoutBarn &ShoutBarn::instance() {
+  static ShoutBarn SHOUT_BARN;
+  return SHOUT_BARN;
+}
+ShoutBarn::ShoutBarn() {  }
