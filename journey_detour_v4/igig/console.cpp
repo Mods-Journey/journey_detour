@@ -6,10 +6,22 @@
 #include "game.h"
 #include "hud.h"
 
+#include "steamapi.h"
+
 #include <imgui_stdlib.h>
 #include <regex>
 #include <winrt/base.h>
-std::regex colorCodeRegex("\x1b\[[0-9;]+m");
+
+
+
+typedef int(__fastcall *GetNumLobbyMembersFn)(void *thisPtr,
+                                              CSteamID steamIDLobby);
+typedef bool(__fastcall *SendLobbyChatMsgFn)(void *thisPtr,
+                                             CSteamID steamIDLobby,
+                                             const void *pvMsgBody,
+                                             int cubMsgBody);
+std::regex
+    colorCodeRegex("\x1b\[[0-9;]+m");
 std::string stripColorCodes(const std::string &input) {
 
   return std::regex_replace(input, colorCodeRegex, "");
@@ -250,7 +262,8 @@ void IgIgPageConsole::execCmd(const std::string &cmd) {
       }
 
       std::string target_pos = cmd.substr(sizeof("tp"));
-      LuaManager::instance().doNextFrame("game:playerBarn():GetLocalDude():SetPos({" + target_pos + "})");
+      LuaManager::instance().doNextFrame(
+          "game:playerBarn():GetLocalDude():SetPos({" + target_pos + "})");
     } else {
       log("\033[31mExpected lua filename, got nothing");
     }
@@ -267,7 +280,6 @@ void IgIgPageConsole::execCmd(const std::string &cmd) {
     return;
   }
 
-
   if (cmd.starts_with("pressure")) {
     if (cmd.size() > sizeof("pressure")) {
       ShoutBarn::instance().SetPressure(stof(cmd.substr(sizeof("pressure"))));
@@ -277,8 +289,29 @@ void IgIgPageConsole::execCmd(const std::string &cmd) {
     return;
   }
 
+  if (cmd.starts_with("steam1")) {
+    uint64_t something = *(uint64_t *)(CSteamJourney::instance().base() + 88);
+    spdlog::info("something: {}", something);
+    
+
+    return;
+  }
+
+  if (cmd.starts_with("steam2")) {
+    
+    return;
+  }
+
+  if (cmd.starts_with("steam3")) {
+    CLobbyListManager::instance().FindLobbies();
+    return;
+  }
 
   log("\033[31mCommand not found");
+}
+
+void OnLobbyMatchList(LobbyMatchList_t *pLobbyMatchList, bool bIOFailure) {
+  // lobby list has been retrieved from Steam back-end, use results
 }
 
 int IgIgPageConsole::TextEditCallBack(ImGuiInputTextCallbackData *data) {

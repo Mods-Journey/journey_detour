@@ -165,83 +165,91 @@ void IgIgHud::draw() {
     ImGui::Text("Journey Detour v4.0.1");
     ImGui::Text(posstr.c_str());
     ImGui::Text(decorationstr.c_str());
-
+    if (CJourneyMatchmaker::instance().GetIsConnected())
+    {
+      
+      std::string partnerstr = fmt::format("Connected To: {}",CJourneyMatchmaker::instance().GetPartnerName());
+      ImGui::Text(partnerstr.c_str());
+      //spdlog::info("{}", partnerstr);
+    }
 
     ImVec2 displaySize = ImGui::GetIO().DisplaySize;
     Matrix4 worldMat = Float4ToMatrix4(worldMatrix);
     Matrix4 projMat = CameraParamToProj(fov, aspect, nearPlane, farPlane,
                                         displaySize.x, displaySize.y);
+    if (shouldDrawESP) {
 
-    for (const auto &member : LobbyMembersRenderList) {
-      auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                         std::chrono::steady_clock::now() - member.lastUpdate)
-                         .count();
-      if (elapsed > 30000LL)
-        continue;
-
-      float minPos[3] = {member.pos[0] - 1.0f, member.pos[1] - 1.0f,
-                         member.pos[2] - 1.0f};
-      float maxPos[3] = {member.pos[0] + 1.0f, member.pos[1] + 1.0f,
-                         member.pos[2] + 1.0f};
-
-      float lines[][6] = {
-          // lower rectangle
-          {minPos[0], minPos[1], minPos[2], maxPos[0], minPos[1], minPos[2]},
-          {minPos[0], minPos[1], minPos[2], minPos[0], minPos[1], maxPos[2]},
-          {maxPos[0], minPos[1], minPos[2], maxPos[0], minPos[1], maxPos[2]},
-          {minPos[0], minPos[1], maxPos[2], maxPos[0], minPos[1], maxPos[2]},
-
-          // upper rectangle
-          {minPos[0], maxPos[1], minPos[2], maxPos[0], maxPos[1], minPos[2]},
-          {minPos[0], maxPos[1], minPos[2], minPos[0], maxPos[1], maxPos[2]},
-          {maxPos[0], maxPos[1], minPos[2], maxPos[0], maxPos[1], maxPos[2]},
-          {minPos[0], maxPos[1], maxPos[2], maxPos[0], maxPos[1], maxPos[2]},
-
-          // joining lines
-          {minPos[0], minPos[1], minPos[2], minPos[0], maxPos[1], minPos[2]},
-          {maxPos[0], minPos[1], minPos[2], maxPos[0], maxPos[1], minPos[2]},
-          {minPos[0], minPos[1], maxPos[2], minPos[0], maxPos[1], maxPos[2]},
-          {maxPos[0], minPos[1], maxPos[2], maxPos[0], maxPos[1], maxPos[2]},
-      };
-
-      for (int i = 0; i < _countof(lines); ++i) {
-        float fromScreenX, fromScreenY, toScreenX, toScreenY;
-
-        bool ws1 = WorldToScreen(Point3(lines[i][0], lines[i][1], lines[i][2]),
-                                 worldMat, projMat, displaySize.x,
-                                 displaySize.y, &fromScreenX, &fromScreenY);
-
-        bool ws2 = WorldToScreen(Point3(lines[i][3], lines[i][4], lines[i][5]),
-                                 worldMat, projMat, displaySize.x,
-                                 displaySize.y, &toScreenX, &toScreenY);
-
-        if (!ws1 && !ws2) {
-          // if line completely not visible (neither endpoint is on screen)
-          // don't draw it at all
+      for (const auto &member : LobbyMembersRenderList) {
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                           std::chrono::steady_clock::now() - member.lastUpdate)
+                           .count();
+        if (elapsed > 30000LL)
           continue;
+
+        float minPos[3] = {member.pos[0] - 1.0f, member.pos[1] - 1.0f,
+                           member.pos[2] - 1.0f};
+        float maxPos[3] = {member.pos[0] + 1.0f, member.pos[1] + 1.0f,
+                           member.pos[2] + 1.0f};
+
+        float lines[][6] = {
+            // lower rectangle
+            {minPos[0], minPos[1], minPos[2], maxPos[0], minPos[1], minPos[2]},
+            {minPos[0], minPos[1], minPos[2], minPos[0], minPos[1], maxPos[2]},
+            {maxPos[0], minPos[1], minPos[2], maxPos[0], minPos[1], maxPos[2]},
+            {minPos[0], minPos[1], maxPos[2], maxPos[0], minPos[1], maxPos[2]},
+
+            // upper rectangle
+            {minPos[0], maxPos[1], minPos[2], maxPos[0], maxPos[1], minPos[2]},
+            {minPos[0], maxPos[1], minPos[2], minPos[0], maxPos[1], maxPos[2]},
+            {maxPos[0], maxPos[1], minPos[2], maxPos[0], maxPos[1], maxPos[2]},
+            {minPos[0], maxPos[1], maxPos[2], maxPos[0], maxPos[1], maxPos[2]},
+
+            // joining lines
+            {minPos[0], minPos[1], minPos[2], minPos[0], maxPos[1], minPos[2]},
+            {maxPos[0], minPos[1], minPos[2], maxPos[0], maxPos[1], minPos[2]},
+            {minPos[0], minPos[1], maxPos[2], minPos[0], maxPos[1], maxPos[2]},
+            {maxPos[0], minPos[1], maxPos[2], maxPos[0], maxPos[1], maxPos[2]},
+        };
+
+        for (int i = 0; i < _countof(lines); ++i) {
+          float fromScreenX, fromScreenY, toScreenX, toScreenY;
+
+          bool ws1 = WorldToScreen(
+              Point3(lines[i][0], lines[i][1], lines[i][2]), worldMat, projMat,
+              displaySize.x, displaySize.y, &fromScreenX, &fromScreenY);
+
+          bool ws2 = WorldToScreen(
+              Point3(lines[i][3], lines[i][4], lines[i][5]), worldMat, projMat,
+              displaySize.x, displaySize.y, &toScreenX, &toScreenY);
+
+          if (!ws1 && !ws2) {
+            // if line completely not visible (neither endpoint is on screen)
+            // don't draw it at all
+            continue;
+          }
+          ImDrawList *drawList = ImGui::GetWindowDrawList();
+          drawList->AddLine(ImVec2(fromScreenX, fromScreenY),
+                            ImVec2(toScreenX, toScreenY), member.color, 1.0f);
         }
-        ImDrawList *drawList = ImGui::GetWindowDrawList();
-        drawList->AddLine(ImVec2(fromScreenX, fromScreenY),
-                          ImVec2(toScreenX, toScreenY),
-                          member.color, 1.0f);
-      }
 
-      float screenX, screenY;
-      bool ws0 = WorldToScreen(
-          Point3(member.pos[0] - 1.0F, member.pos[1] - 1.2F, member.pos[2]),
-          worldMat,
-          projMat, displaySize.x, displaySize.y, &screenX, &screenY);
-      
-      
+        float screenX, screenY;
+        bool ws0 = WorldToScreen(
+            Point3(member.pos[0] - 1.0F, member.pos[1] - 1.2F, member.pos[2]),
+            worldMat, projMat, displaySize.x, displaySize.y, &screenX,
+            &screenY);
 
-      if (ws0) {
-        ImDrawList *drawList = ImGui::GetWindowDrawList();
-        
-        std::string text = fmt::format(
-            "{}({})", member.steamUsername != std::string("???") ? member.steamUsername : member.steamId, elapsed);
+        if (ws0) {
+          ImDrawList *drawList = ImGui::GetWindowDrawList();
 
-        drawList->AddText(ImVec2(screenX, screenY), member.color,
-                          text.c_str());
+          std::string text = fmt::format(
+              "{}({})",
+              member.steamUsername != std::string("???") ? member.steamUsername
+                                                         : member.steamId,
+              elapsed);
+
+          drawList->AddText(ImVec2(screenX, screenY), member.color,
+                            text.c_str());
+        }
       }
     }
 

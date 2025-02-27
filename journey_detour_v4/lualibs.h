@@ -315,6 +315,8 @@ return inspect
 // Custom library used for various debug functions and communications between lua and C.
 const char *lib_journeydetour = R"(
 
+Vars.Lobby.kUseAutoLobby(false)
+
 function AddHullsToDrawList()
     dofile("Data/Scripts/".. game:GetCurrentLevelString() .."/HullInstances.lua")
     for k,v in pairs(HullInstances) do
@@ -378,10 +380,10 @@ local function DecorationMeshes( resources, decBarn )
 		local deco = decBarn:AddDecoration( resources, meshDesc.Mesh, meshDesc.Shader, meshDesc.Transformation )
 
 		DecorationInitialize( resources, deco, meshDesc )
-
+        
 		--if decoSoundTriggers[ meshDesc.Mesh ] then deco:hasSoundTriggers( true ) end
 		--if decoRumbleTriggers[ meshDesc.Mesh ] then deco:hasRumbleTriggers( true ) end
-
+        
 		deco:SetEnabled( true )
 
 		Names[ meshDesc.ObjectName ] = deco

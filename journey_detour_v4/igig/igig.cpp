@@ -4,7 +4,7 @@
 #include <thread>
 
 #include "mistats.h"
-
+#include "igig/lobbybrowser.h"
 #include <detours/detours.h>
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
@@ -328,6 +328,7 @@ void IgIgGui::draw() {
   if (ImGui::BeginTabBar("Pages", tabBarFlags)) {
     IgIgPageConsole::instance().draw();
     IgIgPageMistats::instance().draw();
+    IgIgLobbyBrowser::instance().draw();
   }
 
   ImGui::End();

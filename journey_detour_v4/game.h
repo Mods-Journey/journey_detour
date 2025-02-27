@@ -5,6 +5,9 @@
 #include <vector>
 
 #include "sigscan.h"
+//#include "steam/isteammatchmaking.h"
+#include "steam/steam_api.h"
+
 
 #define LUA_OK 0
 #define LUA_YIELD 1
@@ -51,12 +54,12 @@ struct vec_mat {
   float m41, m42, m43, m44;
 };
 
-struct LobbyChatMsg_t {
-  uint64_t m_ulSteamIDLobby;
-  uint64_t m_ulSteamIDUser;
-  uint8_t m_eChatEntryType;
-  uint32_t m_iChatID;
-};
+//struct LobbyChatMsg_t {
+//  uint64_t m_ulSteamIDLobby;
+//  uint64_t m_ulSteamIDUser;
+//  uint8_t m_eChatEntryType;
+//  uint32_t m_iChatID;
+//};
 
 struct LobbyMember_t {
   uint64_t steamId;
@@ -65,8 +68,19 @@ struct LobbyMember_t {
   float posZ;
 };
 
+
+SIGSCAN_FUNC(Matchmaker_GetPartnerName,
+             "80 B9 ?? ?? ?? ?? ?? 75 ?? 80 B9 ?? ?? ?? ?? ?? 48 8D 81",
+             __fastcall, const char *, uintptr_t matchmaker);
+
+SIGSCAN_FUNC(Matchmaker_JoinRoomFromId,
+             "48 89 5C 24 ?? 55 56 57 41 55 41 56 48 8D 6C 24 ?? 48 81 EC ?? "
+             "?? ?? ?? 48 8B 35",
+             __fastcall,void,uintptr_t matchmaker, CSteamID lobby);
+
+SIGSCAN_FUNC(GetSteamMatchmakingInterface, "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 33 DB 48 8D 4C 24",__fastcall,ISteamMatchmaking*)
 SIGSCAN_FUNC(
-    SteamFriends,
+    GetSteamFriendsInterface,
     "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 48 8B 1D ?? "
     "?? ?? ?? 33 C0 89 44 24 ?? 48 85 DB 74 ?? F0 FF 43 ?? 48 8B 1D ?? ?? ?? "
     "?? 48 8B 35 ?? ?? ?? ?? 48 8B FB 48 85 F6 74 ?? 48 85 DB 74 ?? F0 FF 43 "
@@ -156,6 +170,9 @@ SIGSCAN_FUNC(lua_setglobal,
              "CC 48 89 5C 24 ?? 48 89 74 24",
              __fastcall, void, lua_State *L, const char *name)
 
+
+
+
 class LuaManager {
 public:
   static LuaManager &instance();
@@ -180,6 +197,33 @@ private:
 };
 
 
+class CJourneyMatchmaker 
+{
+public:
+  static CJourneyMatchmaker &instance();
+  uintptr_t GetConnectionBarn();
+  bool GetIsConnected();
+  const char *GetPartnerName();
+  void updateBase(uintptr_t matchmaker);
+  uintptr_t base();
+  
+private:
+  uintptr_t matchmaker = 0;
+  CJourneyMatchmaker();
+};
+
+class CSteamJourney
+{
+public:
+  static CSteamJourney &instance();
+  uintptr_t base();
+  void update(uintptr_t steamjourney);
+  CSteamID GetCurrentLobby();
+
+private:
+  CSteamJourney();
+  uintptr_t m_steamjourney = 0;
+};
 
 
 class DecorationBarn {

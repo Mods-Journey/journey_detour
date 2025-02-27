@@ -26,6 +26,7 @@ class IgIgHud {
 public:
   float worldMatrix[4][4]{};
   //Matrix4 worldMatrix;
+  bool shouldDrawESP = true;
 
   float fov;
   float aspect;

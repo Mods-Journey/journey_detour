@@ -110,6 +110,44 @@ void doImmediate(lua_State *L, std::string str) {
   }
 }
 
+
+
+SIGSCAN_HOOK(
+          Render__Something,
+          "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 66 0F 6F 05 ?? ?? ?? ?? 48 8B DA",
+          __fastcall, void, uintptr_t a1, const char *name) {
+  //spdlog::info("Render__Something: {}", name);
+  /*if (strcmp(name, "passLensDistortionOffset") == 0) {
+    return;
+  }*/
+
+  return Render__Something(a1,name);
+}
+
+SIGSCAN_HOOK(
+    Render__AddQuadPass,
+             "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 8B D8 48 8B F2 E8", __fastcall,
+             uintptr_t, uintptr_t a1, uintptr_t a2, const char* name) {
+  //spdlog::info("Render__AddQuadPass: {}", name);
+  /*if (strcmp(name, "LensDistortionOffset") == 0) {
+    return 0;
+  }*/
+  
+  return Render__AddQuadPass(a1,a2,name);
+}
+
+
+
+SIGSCAN_HOOK(SteamJourneySetup,
+             "48 89 5C 24 ?? 57 48 83 EC ?? 48 8B D9 48 89 11", __fastcall,
+             uintptr_t, uintptr_t a1, uintptr_t a2) 
+{
+  auto ret = SteamJourneySetup(a1, a2);
+  CSteamJourney::instance().update(ret);
+  return ret;
+}
+
+
 SIGSCAN_HOOK(PlayerShout,
              "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 48 89 7C 24 ?? 41 "
              "54 41 56 41 57 48 81 EC ?? ?? ?? ?? 4C 8B BC 24",
@@ -152,7 +190,7 @@ SIGSCAN_HOOK(LoadDecorations, "48 89 4C 24 ?? 55 53 57 41 54 41 56", __fastcall,
   if (v3)
     v3 = *(uintptr_t *)(v3 + 16);
   char *fileName = (char *)(v3 + 144);
-  if (*((uintptr_t *)fileName + 3) >= 0x10ui64)
+  if (*((uintptr_t *)fileName + 3) >= 0x10)
     filePathString = *(char **)fileName;
 
   spdlog::info("LoadDecorationCalled for {}!", filePathString);
@@ -205,6 +243,7 @@ SIGSCAN_HOOK(GameUpdate, "40 55 53 56 57 41 55 41 56 48 8D AC 24", __fastcall,
   lua_State *L = *(lua_State **)(a1 + 32);
   LuaManager::instance().update(L);
   DecorationBarn::instance().update(a1);
+  CJourneyMatchmaker::instance().updateBase(a1);
 
   doImmediate(L, "UpdateHudCameraInfo()");
   doImmediate(L, "UpdateHudLocalDudeInfo()");
@@ -231,7 +270,6 @@ SIGSCAN_HOOK(InputRelated, "48 8B C4 55 56 57 41 55", __fastcall, bool,
   }
   return InputRelated(a1);
 }
-
 SIGSCAN_HOOK(
     luaB_print,
     "48 89 5C 24 ?? 48 89 6C 24 ?? 56 57 41 56 48 83 EC ?? 48 8B F9 E8",
@@ -264,6 +302,9 @@ SIGSCAN_HOOK(
   return 0;
 }
 
+typedef int(__fastcall *GetNumLobbyMembersFn)(void *thisPtr,
+                                              CSteamID steamIDLobby);
+
 SIGSCAN_HOOK(
     OnLobbyChat,
     "48 89 54 24 ?? 55 53 56 57 41 54 41 55 41 56 48 8D AC 24 ?? ?? ?? ?? B8",
@@ -272,18 +313,41 @@ SIGSCAN_HOOK(
   int fromuserid;
   char buffer[4097];
 
-  __int64 v27 = Matchmaking[2];
+  // Matchmaking[2] => ISteamMatchmaking I KNOW RIGHT
+  // Matchmaking[3] => CSteamID steamIDLobby
 
-  // int GetLobbyChatEntry( CSteamID steamIDLobby, int iChatID, CSteamID
-  // *pSteamIDUser, void *pvData, int cubData, EChatEntryType *peChatEntryType
-  // );
+
+  __int64 v27 = Matchmaking[2];
+ 
+  spdlog::info("Matchmaking: {:X}, CSteamJourney: {:X}", (uint64_t)Matchmaking,
+               CSteamJourney::instance().base());
+
+  spdlog::info("CSteamJourneyLobby: {}",
+               CSteamJourney::instance().GetCurrentLobby().ConvertToUint64());
+
+  // ok the function pointer shouldbe
+  // v27(class?)
+  // woah hifi keyboard
+
+  //std::string text = std::format("ptr: {:x}", (uint64_t)((*(void ***)v27) + 17));
+  //MessageBoxA(NULL, text.c_str(), "wow", NULL);
+  //spdlog::info("fun:{:X} ,lobby: {:X}", (uint64_t)funcptr,
+  //             (uint64_t)Matchmaking[3]);
+  //int ret = func((void*)v27 ,*(CSteamID *)&Matchmaking[3]);
+  //spdlog::info("uwu {}",ret);f
+  //return OnLobbyChat(Matchmaking, LobbyChatMsg);
+
+
+
+
+
   size_t result = (*(__int64(__fastcall **)(__int64, __int64, __int64, int *,
                                             char *, int, int *))(
       *(__int64 *)v27 + 216))(v27, Matchmaking[3], LobbyChatMsg->m_iChatID,
                               &fromuserid, buffer, 4096, NULL);
 
   float remoteX = *(float *)buffer;
-  float remoteY = *(float *)(buffer + 4);
+  float remoteY = *(float *)(buffer + 4 );
   float remoteZ = *(float *)(buffer + 8);
 
   bool exists = false;
@@ -311,10 +375,8 @@ SIGSCAN_HOOK(
 
     std::string persona_name;
     if (SteamFriends()) {
-      auto ISteamFriends = SteamFriends();
-      persona_name = (const char *)(*(__int64(__fastcall **)(__int64, __int64))(
-          *(__int64 *)ISteamFriends + 56))(ISteamFriends,
-                                           LobbyChatMsg->m_ulSteamIDUser);
+      persona_name =
+          SteamFriends()->GetFriendPersonaName(LobbyChatMsg->m_ulSteamIDUser);
     } else {
       persona_name = "???";
     }
@@ -325,6 +387,10 @@ SIGSCAN_HOOK(
 
   return OnLobbyChat(Matchmaking, LobbyChatMsg);
 }
+
+
+
+
 
 DecorationBarn::DecorationBarn() {}
 
@@ -348,9 +414,57 @@ int DecorationBarn::getDecorationCount() {
 }
 
 
-
+ShoutBarn::ShoutBarn() {}
 ShoutBarn &ShoutBarn::instance() {
   static ShoutBarn SHOUT_BARN;
   return SHOUT_BARN;
 }
-ShoutBarn::ShoutBarn() {  }
+
+
+
+CJourneyMatchmaker::CJourneyMatchmaker() {}
+CJourneyMatchmaker &CJourneyMatchmaker::instance() {
+  static CJourneyMatchmaker CJourneyMatchmaker;
+  return CJourneyMatchmaker;
+}
+
+uintptr_t CJourneyMatchmaker::GetConnectionBarn() 
+{ 
+    return matchmaker + 1536;
+}
+
+const char *CJourneyMatchmaker::GetPartnerName() 
+{
+  return Matchmaker_GetPartnerName(matchmaker);
+}
+bool CJourneyMatchmaker::GetIsConnected() { 
+    return !*(uint8_t *)(GetConnectionBarn() + 71605) &&
+         *(uint8_t *)(GetConnectionBarn() + 71604);
+}
+
+void CJourneyMatchmaker::updateBase(uintptr_t game) 
+{
+  matchmaker = *(__int64 *)(game + 0x180);
+}
+
+uintptr_t CJourneyMatchmaker::base() { return matchmaker; }
+
+
+
+CSteamJourney::CSteamJourney() {}
+
+uintptr_t CSteamJourney::base() { return m_steamjourney; }
+
+void CSteamJourney::update(uintptr_t steamjourney) 
+{
+  spdlog::info("CSteamJourney Ptr: {:X}", (uint64_t)steamjourney);
+  spdlog::info("CSteamIDLobby: {:X}", (uint64_t)*((uint64_t *)steamjourney + 3));
+  m_steamjourney = steamjourney;
+}
+CSteamID CSteamJourney::GetCurrentLobby() {
+  return (CSteamID)(* ((uint64_t *)m_steamjourney + 3));
+}
+CSteamJourney &CSteamJourney::instance() {
+  static CSteamJourney CSteamJourney;
+  return CSteamJourney;
+}

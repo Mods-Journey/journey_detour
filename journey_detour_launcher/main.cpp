@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
       if (!fs::is_regular_file(dllPath)) {
         dllPath = fs::absolute("journey_detour_v3.dll");
         if (!fs::is_regular_file(dllPath)) {
-          spdlog::error("No valid dll is found");
+            spdlog::error("No valid dll is found");
           std::cin.get();
           return EXIT_FAILURE;
         }
@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     STARTUPINFOW sInfo{};
     PROCESS_INFORMATION pInfo{};
 
-    winrt::check_bool(CreateProcessW(L"Journey.exe", NULL, NULL, NULL, FALSE,
+    winrt::check_bool(CreateProcessW(L"Journey.exe.unpacked.exe", NULL, NULL, NULL, FALSE,
                                      CREATE_SUSPENDED, NULL, NULL, &sInfo,
                                      &pInfo));
 
@@ -69,6 +69,7 @@ int main(int argc, char **argv) {
     }
 
     winrt::check_bool(VirtualFreeEx(pInfo.hProcess, payload, 0, MEM_RELEASE));
+
 
     if (ResumeThread(pInfo.hThread) == -1) {
       winrt::throw_last_error();
